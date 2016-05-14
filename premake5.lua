@@ -43,9 +43,12 @@ project "SoftCompute"
    -- MacOSX. Guess we use gcc.
    configuration { "macosx" }
 
-      -- Assume LLVM ToT
+      buildoptions { '-std=c++11' }
+
+      -- includedirs { "`" .. llvm_config .. " --includedir`" }
+      --includedirs { "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.11.sdk/usr/include/c++/4.2.1" }
       buildoptions { "`" .. llvm_config .. " --cxxflags`" }
-      linkoptions { "`" .. llvm_config .. " --ldflags --libs`" }
+      linkoptions { "`" .. llvm_config .. " --ldflags --libs --system-libs`" }
       links { "clangFrontend", "clangSerialization", "clangDriver", "clangCodeGen"
             , "clangParse", "clangSema", "clangStaticAnalyzerFrontend"
             , "clangStaticAnalyzerCheckers", "clangStaticAnalyzerCore"
@@ -111,7 +114,6 @@ project "SoftCompute"
 
       buildoptions { "`" .. llvm_config .. " --cxxflags`" }
       linkoptions { "`" .. llvm_config .. " --ldflags --libs`" }
-      --linkoptions { "-stdlib=libc++" }
 
       links { "pthread", "dl" }
 
