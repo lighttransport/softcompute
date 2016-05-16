@@ -105,7 +105,7 @@ project "SoftCompute"
       defines { '__STDC_CONSTANT_MACROS', '__STDC_LIMIT_MACROS' } -- c99
 
       buildoptions { '-std=c++11' }
-      buildoptions { '-stdlib=libc++' }
+      --buildoptions { '-stdlib=libc++' }
 
       if _OPTIONS['with-asan'] then
          buildoptions { "-fsanitizer=address -fno-omit-frame-pointer" }
@@ -113,7 +113,14 @@ project "SoftCompute"
       end
 
       buildoptions { "`" .. llvm_config .. " --cxxflags`" }
+      linkoptions { "-lclangFrontend", "-lclangSerialization", "-lclangDriver", "-lclangCodeGen"
+            , "-lclangParse", "-lclangSema", "-lclangStaticAnalyzerFrontend"
+            , "-lclangStaticAnalyzerCheckers", "-lclangStaticAnalyzerCore"
+            , "-lclangAnalysis", "-lclangRewriteFrontend", "-lclangRewrite"
+            , "-lclangEdit", "-lclangAST", "-lclangLex", "-lclangBasic"
+            }
       linkoptions { "`" .. llvm_config .. " --ldflags --libs`" }
+      --linkoptions { '-stdlib=libc++' }
 
       links { "pthread", "dl" }
 
