@@ -57,9 +57,13 @@ project "SoftCompute"
 
       buildoptions { '-std=c++11' }
 
+      -- glm
+      includedirs { '/usr/local/include' }
+
       -- includedirs { "`" .. llvm_config .. " --includedir`" }
-      --includedirs { "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.11.sdk/usr/include/c++/4.2.1" }
       buildoptions { "`" .. llvm_config .. " --cxxflags`" }
+      -- For XCode7 + El Capitan
+      buildoptions { '-isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.11.sdk' }
       linkoptions { "`" .. llvm_config .. " --ldflags --libs --system-libs`" }
       links { "clangFrontend", "clangSerialization", "clangDriver", "clangCodeGen"
             , "clangParse", "clangSema", "clangStaticAnalyzerFrontend"
@@ -68,7 +72,7 @@ project "SoftCompute"
             , "clangEdit", "clangAST", "clangLex", "clangBasic"
             }
 
-      linkoptions { "-pthread" }
+      linkoptions { "-lpthread" }
 
    -- Windows specific
    --configuration { "windows" }

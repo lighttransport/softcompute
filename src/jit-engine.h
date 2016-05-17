@@ -10,49 +10,15 @@
 
 namespace softcompute {
 
-#ifdef _MSV_VER
-#pragma pack(1)
-#endif
-typedef struct PACKED {
-    float u, v;
-    float s, t;
-    int x, y, z, w;
-
-} ShaderEnv;
-
-typedef enum {
-  SHADER_PARAM_TYPE_INVALID = 0,
-  SHADER_PARAM_TYPE_FLOAT,
-  SHADER_PARAM_TYPE_STRING,
-  SHADER_PARAM_TYPE_VEC4
-} ShaderParamType;
-
-struct ShaderParam
-{
-  ShaderParamType     type;
-  float               fValue;
-  std::string         sValue;
-  std::vector<float>  vfValue;
-
-  ShaderParam() : type(SHADER_PARAM_TYPE_INVALID) {
-  }
-}; 
-
-typedef std::map<std::string, ShaderParam> ShaderParamMap;
-
 class ShaderInstance {
 public:
   ShaderInstance();
   ~ShaderInstance();
 
-  // type == "shader"
-  bool Compile(const std::string& type, const std::vector<std::string>& paths, const std::string& filename, const ShaderParamMap& paramMap);
+  // type must be "comp" at this time.
+  bool Compile(const std::string& type, const std::vector<std::string>& paths, const std::string& filename);
 
-  /// Eval JIT compiled shader
-  bool Eval(ShaderEnv *env);
-
-  /// Eval JIT compiled imager
-  bool EvalImager(ShaderEnv *env);
+  void *GetInterface();
 
 private:
   class Impl;
@@ -66,7 +32,7 @@ public:
   ~ShaderEngine();
 
   /// Compile SPIRV-Cross generated cpp shader.
-  ShaderInstance* Compile(const std::string& type, unsigned int shaderID, const std::vector<std::string>& paths, const std::string &filename, const ShaderParamMap& paramMap);
+  ShaderInstance* Compile(const std::string& type, unsigned int shaderID, const std::vector<std::string>& paths, const std::string &filename);
 
   ShaderInstance* GetShaderInstance(unsigned int shaderID) {
     // @todo { use array for faster lookup. }
