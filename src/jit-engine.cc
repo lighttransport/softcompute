@@ -57,6 +57,7 @@ static std::string GetFileExtension(const std::string &FileName) {
   return "";
 }
 
+#if 0
 static bool EqSymbol(const std::string &name, const std::string &sym) {
   if (name == sym) {
     return true;
@@ -70,7 +71,6 @@ static bool EqSymbol(const std::string &name, const std::string &sym) {
   return false;
 }
 
-#if 0
 static int __lte__isinff(float x) { return std::isinf(x); }
 
 static int __lte__isfinitef(float x) { return std::isfinite(x); }
@@ -589,16 +589,26 @@ bool ShaderInstance::Impl::Compile(
   llvm::SmallVector<const char *, 16> Args;
   //filename.c_str());
   Args.push_back("<clang>");            // argv[0]
-  Args.push_back("-nostdinc");          // Disable stdinc
-  Args.push_back("-x");                 // OpenCL C
-  Args.push_back("cl");                 // OpenCL C
-  Args.push_back("-D__LTE_CLSHADER__"); // CL shader
+  //Args.push_back("-nostdinc");          // Disable stdinc
+  //Args.push_back("-D__LTE_CLSHADER__"); // CL shader
   Args.push_back(abspath.c_str());
   Args.push_back("-fsyntax-only");
   Args.push_back("-fno-stack-protector"); // Avoid unresolved __stack_chk_fail symbol error in musl libc environment.
 
+  Args.push_back("-std=c++11");
+
+  Args.push_back("-fno-exceptions");
+  Args.push_back("-fno-rtti");
+  Args.push_back("-D_GNU_SOURCE");
+  Args.push_back("-D__STDC_CONSTANT_MACROS");
+  Args.push_back("-D__STDC_FORMAT_MACROS");
+  Args.push_back("-D__STDC_LIMIT_MACROS");
+
   // Add current dir to path
   Args.push_back("-I.");
+  Args.push_back("-Ispirv_cross");
+  Args.push_back("-I/home/syoyo/local/clang+llvm-3.8.0-linux-x86_64-centos6/include/c++/v1"); // HACK
+  Args.push_back("-I/home/syoyo/local/clang+llvm-3.8.0-linux-x86_64-centos6/lib/clang/3.8.0/include"); // HACK
   //Args.push_back("-I./tmp");
   //Args.push_back("-I./shaders");
   //Args.push_back("-I./tmp");
@@ -636,12 +646,14 @@ bool ShaderInstance::Impl::Compile(
     llvm::raw_svector_ostream OS(Msg);
     Jobs.Print(OS, "; ", true);
     Diags.Report(diag::err_fe_expected_compiler_job) << OS.str();
+    printf("job error\n");
     return false;
   }
 
   const driver::Command &Cmd = cast<driver::Command>(*Jobs.begin());
   if (llvm::StringRef(Cmd.getCreator().getName()) != "clang") {
     Diags.Report(diag::err_fe_expected_clang_command);
+    printf("clang error\n");
     return false;
   }
 
@@ -801,7 +813,10 @@ ShaderInstance::~ShaderInstance() { delete impl; }
 bool ShaderInstance::Compile(const std::string& type, const std::vector<std::string>& paths, const std::string& filename, const ShaderParamMap& paramMap)
 {
   assert(impl);
-  if (type != "shader" && type != "imager") return false;
+  if (type != "comp") {
+    std::cerr << "Unknown type: " << type << std::endl;
+    return false;
+  }
 
   return impl->Compile(type, paths, filename, paramMap);
 }
@@ -994,7 +1009,7 @@ ShaderInstance* ShaderEngine::Compile(
 
   shaderInstanceMap_[shaderID] = shaderInstance;
 
-  printf("shaderID[%d] = %p\n", shaderID, shaderInstance);
+  //printf("shaderID[%d] = %p\n", shaderID, shaderInstance);
 
   return shaderInstance;
 }

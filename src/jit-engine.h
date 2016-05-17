@@ -65,8 +65,7 @@ public:
   ShaderEngine(bool abortOnFailure = false);
   ~ShaderEngine();
 
-  /// Compile C shader.
-  /// type = "shader" or "imager"
+  /// Compile SPIRV-Cross generated cpp shader.
   ShaderInstance* Compile(const std::string& type, unsigned int shaderID, const std::vector<std::string>& paths, const std::string &filename, const ShaderParamMap& paramMap);
 
   ShaderInstance* GetShaderInstance(unsigned int shaderID) {

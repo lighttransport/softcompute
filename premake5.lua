@@ -5,6 +5,13 @@ newoption {
    description = "Path to llvm-config."
 }
 
+-- SPIRV-Cross path
+newoption {
+   trigger     = "spirv-cross",
+   value       = "PATH",
+   description = "Path to SPIRV-Cross."
+}
+
 -- Address-sanitizerr
 newoption {
    trigger     = "with-asan",
@@ -38,7 +45,12 @@ project "SoftCompute"
       llvm_config = _OPTIONS['llvm-config']
    end
 
-   print(llvm_config)
+   spirv_cross_path = "../SPIRV-Cross/"
+   if _OPTIONS['spirv_cross'] then
+      spirv_cross_path = _OPTIONS['spirv_cross']
+   end
+
+   includedirs { spirv_cross_path .. '/include' }
 
    -- MacOSX. Guess we use gcc.
    configuration { "macosx" }
