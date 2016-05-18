@@ -121,6 +121,7 @@ project "SoftCompute"
       defines { '__STDC_CONSTANT_MACROS', '__STDC_LIMIT_MACROS' } -- c99
 
       buildoptions { '-std=c++11' }
+      buildoptions { "-pthread" }
       --buildoptions { '-stdlib=libc++' }
 
       if _OPTIONS['with-asan'] then
@@ -128,17 +129,16 @@ project "SoftCompute"
          linkoptions { "-fsanitizer=address" }
       end
 
-      buildoptions { "`" .. llvm_config .. " --cxxflags`" }
+      -- Strip "-O3 -NDEBUG"
+      buildoptions { "`" .. llvm_config .. " --cxxflags | sed -e 's/-O3 -NDEBUG//g'`" }
       linkoptions { "-lclangFrontend", "-lclangSerialization", "-lclangDriver", "-lclangCodeGen"
             , "-lclangParse", "-lclangSema", "-lclangStaticAnalyzerFrontend"
             , "-lclangStaticAnalyzerCheckers", "-lclangStaticAnalyzerCore"
             , "-lclangAnalysis", "-lclangRewriteFrontend", "-lclangRewrite"
             , "-lclangEdit", "-lclangAST", "-lclangLex", "-lclangBasic"
             }
-      linkoptions { "`" .. llvm_config .. " --ldflags --libs`" }
+      linkoptions { "`" .. llvm_config .. " --ldflags --libs --system-libs`" }
       --linkoptions { '-stdlib=libc++' }
-
-      links { "pthread", "dl" }
 
 
    configuration "Debug"
