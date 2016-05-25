@@ -29,13 +29,13 @@
 
 #include <glm/glm.hpp>
 
+#include "barrier.hpp"
+#include "external_interface.h"
+#include "image.hpp"
+#include "sampler.hpp"
+#include "thread_group.hpp"
 #include <assert.h>
 #include <stdint.h>
-#include "external_interface.h"
-#include "barrier.hpp"
-#include "thread_group.hpp"
-#include "sampler.hpp"
-#include "image.hpp"
 
 namespace internal
 {
@@ -326,18 +326,13 @@ struct spirv_cross_shader
 		assert(set < SPIRV_CROSS_NUM_DESCRIPTOR_SETS);
 		assert(binding < SPIRV_CROSS_NUM_DESCRIPTOR_BINDINGS);
 		assert(resources[set][binding].ptr);
-		printf("%d, %d\n", size, resources[set][binding].size);
 		assert(size >= resources[set][binding].size);
 
 		// We're using the regular PointerInterface, dereference ahead of time.
-		if (resources[set][binding].pre_dereference) {
-			printf("pre_deref\n");
+		if (resources[set][binding].pre_dereference)
 			*resources[set][binding].ptr = *data;
-		}
 		else
-		{
 			*resources[set][binding].ptr = data;
-		}
 	}
 };
 
