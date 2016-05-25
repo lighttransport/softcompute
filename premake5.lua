@@ -21,6 +21,7 @@ newoption {
 sources = {
    "src/main.cc"
  , "src/jit-engine.cc"
+ , "src/OptionParser.cpp"
 }
 
 
