@@ -217,7 +217,7 @@ bool ShaderInstance::Impl::Compile(const std::string &type, const std::vector<st
 	// Linux
 
 	// Edit this path fit to your environment.
-	Args.push_back("-I/usr/include/c++/4.8.5");
+	Args.push_back("-I/usr/include/c++/4.8.5"); // CentOS7
 	Args.push_back("-I/usr/include/c++/4.8.5/x86_64-redhat-linux");
 	Args.push_back("-I/usr/include/c++/4.8.5/backward");
 	Args.push_back("-I/usr/lib/gcc/x86_64-redhat-linux/4.8.5/finclude/");
