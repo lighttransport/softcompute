@@ -1,4 +1,4 @@
-# SoftCompute, CPU JIT execution of SPIR-V compute shader execution system.
+# SoftCompute, CPU JIT execution of SPIR-V compute shader.
 
 ![](screenshot/ao.png)
 
