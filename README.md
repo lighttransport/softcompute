@@ -23,9 +23,9 @@
 
     $ premake5 gmake
 
-Or you can explicitly specify path to `llvm-config` with
+Or you can explicitly specify path to `llvm-config` and SPIRV-Cross repo path with
 
-    $ premake5 --llvm-config=/path/to/llvm-config gmake
+    $ premake5 --llvm-config=/path/to/llvm-config --spirv-cross=/path/to/SPIRV-Cross gmake
 
 Then,
 
