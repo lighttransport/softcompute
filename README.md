@@ -12,7 +12,6 @@
 * clang/LLVM 3.8+ http://llvm.org/releases/download.html
   * GNU STL or libc++ depending on your clang/LLVM build configuration
   * At least 3.8 prebuilt package for CentOS6 and El Capitan confirmed working
-* C++-11 compiler
 * glslang http://glm.g-truc.net/0.9.7/index.html
 * SPIR-Cross https://github.com/KhronosGroup/SPIRV-Cross
 * glm 0.9.7.4 or later
@@ -28,6 +27,7 @@ Or you can explicitly specify path to `llvm-config` with
 
 Then,
 
+    $ export CXX=clang++
     $ make
 
 ## Setup and how to run
