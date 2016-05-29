@@ -13,11 +13,10 @@
 * Premake5 https://premake.github.io/download.html
 * clang/LLVM 3.8+ http://llvm.org/releases/download.html
   * GNU STL or libc++ depending on your clang/LLVM build configuration
-  * At least 3.8 prebuilt package for CentOS6 and El Capitan confirmed working
+  * At least 3.8 prebuilt package for CentOS6(Linux) and El Capitan(MacOSX) confirmed working
 * glslang http://glm.g-truc.net/0.9.7/index.html
 * SPIR-Cross https://github.com/KhronosGroup/SPIRV-Cross
 * glm 0.9.7.4 or later
-
 
 ## Build on Linux or MacOSX
 
@@ -54,7 +53,7 @@ Then,
 
 ### Note
 
-You may manually edit C/C++ header path in `src/jit-engine.cc`
+You may need manually edit C/C++ header path in `src/jit-engine.cc`
 
 ## License
 
