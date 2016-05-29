@@ -1,4 +1,4 @@
-# SoftCompute, CPU JIT execution of SPIR-V compute shader execution system.
+# SoftCompute, CPU JIT execution of SPIR-V compute shader.
 
 ![](screenshot/ao.png)
 
@@ -6,32 +6,26 @@
 
 * Debug compute shader more easily.
 * Run compute shader where no compute shader capable OpenGL device is available.
-* Currently SoftCompute only could be able to run very simple compute shader.
+* Currently `SoftCompute` only could be able to run very simple compute shader.
 
 ## Requirements
 
 * Premake5 https://premake.github.io/download.html
 * clang/LLVM 3.8+ http://llvm.org/releases/download.html
   * GNU STL or libc++ depending on your clang/LLVM build configuration
-  * At least 3.8 prebuilt package for CentOS6(Linux) and El Capitan(MacOSX) confirmed working
-* glslang http://glm.g-truc.net/0.9.7/index.html
+  * At least 3.8 prebuilt package for CentOS6 and El Capitan confirmed working
+* glslang https://github.com/KhronosGroup/glslang
 * SPIR-Cross https://github.com/KhronosGroup/SPIRV-Cross
-* glm 0.9.7.4 or later
+* glm 0.9.7.4 or later http://glm.g-truc.net/
 
 ## Build on Linux or MacOSX
 
     $ premake5 gmake
 
-Or you can explicitly specify path to `llvm-config` with
+Or you can explicitly specify path to `llvm-config` and SPIRV-Cross repo path with
 
-    $ premake5 --llvm-config=/path/to/llvm-config gmake
+    $ premake5 --llvm-config=/path/to/llvm-config --spirv-cross=/path/to/SPIRV-Cross gmake
 
-Then,
-
-    $ export CXX=clang++
-    $ make
-
-## Setup and how to run
 
 Put `glm` directory to this directory(or create a symlink).
 
@@ -41,6 +35,13 @@ Put `glm` directory to this directory(or create a symlink).
     bin
     src
     ... 
+
+Then,
+
+    $ export CXX=clang++
+    $ make
+
+## Setup and how to run
 
 Create cpp shader from GLSL using `glslangValidator` and `spirv-cross`
 
