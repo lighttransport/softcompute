@@ -38,7 +38,7 @@ project "SoftCompute"
    files { sources }
 
    includedirs {
-      "./"
+      "./",
       "./include"
    }
 
