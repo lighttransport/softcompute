@@ -1,3 +1,17 @@
+// Copyright 2016 Light Transport Entertainment, Inc.
+// 
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+// 
+//     http://www.apache.org/licenses/LICENSE-2.0
+// 
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 // Work around for llvm-config
 #ifdef DEBUG
 #undef DEBUG
@@ -178,8 +192,7 @@ bool ShaderInstance::Impl::Compile(const std::string &type, const std::vector<st
 	llvm::SmallVector<const char *, 16> Args;
 	//filename.c_str());
 	Args.push_back("<clang>"); // argv[0]
-	//Args.push_back("-nostdinc");          // Disable stdinc
-	//Args.push_back("-D__LTE_CLSHADER__"); // CL shader
+	//Args.push_back("-nostdinc");          // @todo { disable stdinc }
 	Args.push_back(abspath.c_str());
 	Args.push_back("-x");
 	Args.push_back("c++");
@@ -213,11 +226,16 @@ bool ShaderInstance::Impl::Compile(const std::string &type, const std::vector<st
 	Args.push_back("-I/home/syoyo/local/clang+llvm-3.8.0-linux-x86_64-centos6/lib/clang/3.8.0/include");
 
 	// OSX
-	Args.push_back("-isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.11.sdk");
-	Args.push_back("-I/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1");
-	Args.push_back("-I/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/7.3.0/include");
+	Args.push_back("-isysroot "
+	               "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/"
+	               "MacOSX10.11.sdk");
+	Args.push_back(
+	    "-I/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1");
+	Args.push_back(
+	    "-I/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/7.3.0/include");
 	Args.push_back("-I/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include");
-	Args.push_back("-I/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.11.sdk/usr/include/");
+	Args.push_back("-I/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/"
+	               "MacOSX10.11.sdk/usr/include/");
 	Args.push_back("-I/usr/local/include"); // homebrew
 
 	std::vector<std::string> searchPathArgs;
@@ -236,7 +254,7 @@ bool ShaderInstance::Impl::Compile(const std::string &type, const std::vector<st
 
 	for (size_t i = 0; i < Args.size(); i++)
 	{
-		printf("arg: %s\n", Args[i]);
+		//printf("arg: %s\n", Args[i]);
 	}
 
 	std::unique_ptr<Compilation> C(TheDriver.BuildCompilation(Args));
@@ -369,9 +387,9 @@ bool ShaderInstance::Impl::Compile(const std::string &type, const std::vector<st
 		return false;
 	}
 
-	// Disable symbol search using dlsym for security(e.g. disable sysmte() call
+	// Disable symbol search using dlsym for security(e.g. disable system() call
 	// from the shader)
-	//EE->DisableSymbolSearching(); // @todo { Turn on this feature. }
+	//EE->DisableSymbolSearching(); // @todo { Turn on this feature to increase security. }
 
 	EE->DisableLazyCompilation(true);
 
