@@ -6,7 +6,7 @@
 
 * Debug compute shader more easily.
 * Run compute shader where no compute shader capable OpenGL device is available.
-* Currently SoftCompute only could be able to run very simple compute shader.
+* Currently `SoftCompute` only could be able to run very simple compute shader.
 
 ## Requirements
 
@@ -14,9 +14,9 @@
 * clang/LLVM 3.8+ http://llvm.org/releases/download.html
   * GNU STL or libc++ depending on your clang/LLVM build configuration
   * At least 3.8 prebuilt package for CentOS6 and El Capitan confirmed working
-* glslang http://glm.g-truc.net/0.9.7/index.html
+* glslang https://github.com/KhronosGroup/glslang
 * SPIR-Cross https://github.com/KhronosGroup/SPIRV-Cross
-* glm 0.9.7.4 or later
+* glm 0.9.7.4 or later http://glm.g-truc.net/
 
 
 ## Build on Linux or MacOSX
