@@ -1,5 +1,7 @@
 # SoftCompute, CPU JIT execution of SPIR-V compute shader execution system.
 
+![](screenshot/ao.png)
+
 ## Purpose
 
 * Debug compute shader more easily.
