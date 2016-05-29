@@ -27,12 +27,6 @@ Or you can explicitly specify path to `llvm-config` and SPIRV-Cross repo path wi
 
     $ premake5 --llvm-config=/path/to/llvm-config --spirv-cross=/path/to/SPIRV-Cross gmake
 
-Then,
-
-    $ export CXX=clang++
-    $ make
-
-## Setup and how to run
 
 Put `glm` directory to this directory(or create a symlink).
 
@@ -42,6 +36,13 @@ Put `glm` directory to this directory(or create a symlink).
     bin
     src
     ... 
+
+Then,
+
+    $ export CXX=clang++
+    $ make
+
+## Setup and how to run
 
 Create cpp shader from GLSL using `glslangValidator` and `spirv-cross`
 
