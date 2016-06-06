@@ -2,6 +2,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <vector>
+#include <fstream>
 
 #include <chrono>
 
@@ -9,6 +10,8 @@
 
 #include "spirv_cross/external_interface.h"
 #include "spirv_cross/internal_interface.hpp"
+
+#include <shaderc/shaderc.hpp>
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
@@ -56,6 +59,72 @@ void SaveImageAsPNG(const char *filename, const float *rgba, int width,
   }
 }
 
+// Returns GLSL shader source text after preprocessing.
+std::string preprocess_shader(const std::string& source_name,
+                              shaderc_shader_kind kind,
+                              const std::string& source) {
+  shaderc::Compiler compiler;
+  shaderc::CompileOptions options;
+
+  // Like -DMY_DEFINE=1
+  options.AddMacroDefinition("MY_DEFINE", "1");
+
+  shaderc::PreprocessedSourceCompilationResult result = compiler.PreprocessGlsl(
+      source.c_str(), source.size(), kind, source_name.c_str(), options);
+
+  if (result.GetCompilationStatus() != shaderc_compilation_status_success) {
+    std::cerr << result.GetErrorMessage();
+    return "";
+  }
+
+  return std::string(result.cbegin(), result.cend());
+}
+
+// Compiles a shader to SPIR-V assembly. Returns the assembly text
+// as a string.
+std::string compile_file_to_assembly(const std::string& source_name,
+                                     shaderc_shader_kind kind,
+                                     const std::string& source) {
+  shaderc::Compiler compiler;
+  shaderc::CompileOptions options;
+
+  // Like -DMY_DEFINE=1
+  options.AddMacroDefinition("MY_DEFINE", "1");
+
+  shaderc::AssemblyCompilationResult result = compiler.CompileGlslToSpvAssembly(
+      source.c_str(), source.size(), kind, source_name.c_str(), options);
+
+  if (result.GetCompilationStatus() != shaderc_compilation_status_success) {
+    std::cerr << result.GetErrorMessage();
+    return "";
+  }
+
+  return std::string(result.cbegin(), result.cend());
+}
+
+// Compiles a shader to a SPIR-V binary. Returns the binary as
+// a vector of 32-bit words.
+std::vector<uint32_t> compile_file(const std::string& source_name,
+                                   shaderc_shader_kind kind,
+                                   const std::string& source) {
+  shaderc::Compiler compiler;
+  shaderc::CompileOptions options;
+
+  // Like -DMY_DEFINE=1
+  options.AddMacroDefinition("MY_DEFINE", "1");
+
+  shaderc::SpvCompilationResult module = compiler.CompileGlslToSpv(
+      source.c_str(), source.size(), kind, source_name.c_str(), options);
+
+  if (module.GetCompilationStatus() != shaderc_compilation_status_success) {
+    std::cerr << module.GetErrorMessage();
+    return std::vector<uint32_t>();
+  }
+
+  std::vector<uint32_t> result(module.cbegin(), module.cend());
+  return result;
+}
+
 int main(int argc, char **argv)
 {
 	if (argc < 2)
@@ -65,6 +134,22 @@ int main(int argc, char **argv)
 	}
 
 	std::string filename = argv[1];
+
+  {
+    std::ifstream ifs(filename);
+    if (ifs.fail()) {
+        std::cerr << "Failed to read " << filename << std::endl;
+        exit(-1);
+    }
+
+    std::istreambuf_iterator<char> it(ifs);
+    std::istreambuf_iterator<char> last;
+    std::string source(it, last);
+    
+    std::vector<uint32_t> spirv_binary = compile_file(filename, shaderc_glsl_compute_shader, source);
+    std::cout << "binary_size = " << spirv_binary.size();
+    return -1;
+  }
 
 	softcompute::ShaderEngine engine;
 
