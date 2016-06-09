@@ -3,6 +3,15 @@
 #include <iostream>
 #include <vector>
 #include <fstream>
+#include <sstream>
+
+#ifdef _WIN32
+#else
+#include <dlfcn.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#endif
+
 
 #include <chrono>
 
@@ -10,8 +19,6 @@
 
 #include "spirv_cross/external_interface.h"
 #include "spirv_cross/internal_interface.hpp"
-
-#include <shaderc/shaderc.hpp>
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
@@ -59,70 +66,124 @@ void SaveImageAsPNG(const char *filename, const float *rgba, int width,
   }
 }
 
-// Returns GLSL shader source text after preprocessing.
-std::string preprocess_shader(const std::string& source_name,
-                              shaderc_shader_kind kind,
-                              const std::string& source) {
-  shaderc::Compiler compiler;
-  shaderc::CompileOptions options;
+bool exec_command(const std::string& cmd) {
+  // This may not be needed, but for the safety.
+  // See popen(3) manual for details why calling fflush(NULL) here
+  fflush(NULL);
 
-  // Like -DMY_DEFINE=1
-  options.AddMacroDefinition("MY_DEFINE", "1");
+#if defined(_WIN32)
+  FILE *pfp = _popen(cmd.c_str(), "r");
+#else
+  FILE *pfp = popen(cmd.c_str(), "r");
+#endif
 
-  shaderc::PreprocessedSourceCompilationResult result = compiler.PreprocessGlsl(
-      source.c_str(), source.size(), kind, source_name.c_str(), options);
+  if (!pfp) {
+    std::cerr << "Failed to open pipe." << std::endl;
+    perror("popen");
 
-  if (result.GetCompilationStatus() != shaderc_compilation_status_success) {
-    std::cerr << result.GetErrorMessage();
-    return "";
+    return false;
   }
 
-  return std::string(result.cbegin(), result.cend());
+  char buf[4096];
+  while (fgets(buf, 4095, pfp) != NULL) {
+    printf("%s", buf);
+  }
+
+#if defined(_WIN32)
+  int status = _pclose(pfp);
+  if (status == -1) {
+    fprintf(stderr, "Failed to close pipe.\n");
+    return false;
+  }
+#else
+  int status = pclose(pfp);
+  if (status == -1) {
+    fprintf(stderr, "Failed to close pipe.\n");
+    return false;
+  }
+#endif
+
+  return true;
 }
 
-// Compiles a shader to SPIR-V assembly. Returns the assembly text
-// as a string.
-std::string compile_file_to_assembly(const std::string& source_name,
-                                     shaderc_shader_kind kind,
-                                     const std::string& source) {
-  shaderc::Compiler compiler;
-  shaderc::CompileOptions options;
+// glsl -> spirv
+bool compile_glsl(const std::string& output_filename, const std::string& glsl_filename) {
 
-  // Like -DMY_DEFINE=1
-  options.AddMacroDefinition("MY_DEFINE", "1");
-
-  shaderc::AssemblyCompilationResult result = compiler.CompileGlslToSpvAssembly(
-      source.c_str(), source.size(), kind, source_name.c_str(), options);
-
-  if (result.GetCompilationStatus() != shaderc_compilation_status_success) {
-    std::cerr << result.GetErrorMessage();
-    return "";
+  //
+  // Invoke `glslangValidator`
+  //
+  std::string binary = "glslangValidator";
+  char *binary_path = getenv("GLSLANG_VALIDADOR");
+  if (binary_path) {
+    binary = binary_path;
+    printf("glslangValidator = %s\n", binary.c_str());
   }
 
-  return std::string(result.cbegin(), result.cend());
+  std::stringstream ss;
+  ss << binary;
+  ss << " -V";
+  ss << " -o " << output_filename.c_str();
+  ss << " " << glsl_filename;
+
+  std::string cmd;
+  cmd = ss.str();
+  std::cout << cmd << std::endl;
+
+  bool ret = exec_command(cmd);
+  if (ret) {
+
+    //
+    // Check if compiled cpp code exists.
+    //
+    std::ifstream ifile(output_filename);
+    if (!ifile) {
+      std::cerr << "Failed to translate GLSL to SPIR-V" << std::endl;
+      return false;
+    }
+
+  }
+
+  return true;
 }
 
-// Compiles a shader to a SPIR-V binary. Returns the binary as
-// a vector of 32-bit words.
-std::vector<uint32_t> compile_file(const std::string& source_name,
-                                   shaderc_shader_kind kind,
-                                   const std::string& source) {
-  shaderc::Compiler compiler;
-  shaderc::CompileOptions options;
+// spirv -> c++
+bool compile_spirv(const std::string& output_filename, const std::string& spirv_filename) {
 
-  // Like -DMY_DEFINE=1
-  options.AddMacroDefinition("MY_DEFINE", "1");
-
-  shaderc::SpvCompilationResult module = compiler.CompileGlslToSpv(
-      source.c_str(), source.size(), kind, source_name.c_str(), options);
-
-  if (module.GetCompilationStatus() != shaderc_compilation_status_success) {
-    std::cerr << module.GetErrorMessage();
-    return std::vector<uint32_t>();
+  //
+  // Invoke `spirv-cross`
+  //
+  std::string spirv_cross = "spirv-cross";
+  char *spirv_cross_path = getenv("SPIRV_CROSS");
+  if (spirv_cross_path) {
+    spirv_cross = spirv_cross_path;
+    printf("spirv-cross = %s\n", spirv_cross.c_str());
   }
 
-  std::vector<uint32_t> result(module.cbegin(), module.cend());
-  return result;
+  std::stringstream ss;
+  ss << spirv_cross;
+  ss << " --output " << output_filename.c_str();
+  ss << " --cpp";
+  ss << " " << spirv_filename;
+
+  std::string cmd;
+  cmd = ss.str();
+  std::cout << cmd << std::endl;
+
+  bool ret = exec_command(cmd);
+  if (ret) {
+
+    //
+    // Check if compiled cpp code exists.
+    //
+    std::ifstream ifile(output_filename);
+    if (!ifile) {
+      std::cerr << "Failed to translate SPIR-V to C++" << std::endl;
+      return false;
+    }
+
+  }
+
+  return true;
 }
 
 int main(int argc, char **argv)
@@ -135,20 +196,34 @@ int main(int argc, char **argv)
 
 	std::string filename = argv[1];
 
-  {
-    std::ifstream ifs(filename);
-    if (ifs.fail()) {
-        std::cerr << "Failed to read " << filename << std::endl;
-        exit(-1);
+  const char *ext = strrchr(filename.c_str(), '.');
+
+  if (strcmp(ext, ".cc") == 0 || strcmp(ext, ".cpp") == 0) {
+    // Assume C++
+
+  } else if (strcmp(ext, ".spv") == 0) {
+    // Assume SPIR-V binary
+    std::string tmp_cc_filename = "tmp.cc";
+    bool ret = compile_spirv(tmp_cc_filename, filename);
+    if (!ret) {
+      return -1;
     }
 
-    std::istreambuf_iterator<char> it(ifs);
-    std::istreambuf_iterator<char> last;
-    std::string source(it, last);
-    
-    std::vector<uint32_t> spirv_binary = compile_file(filename, shaderc_glsl_compute_shader, source);
-    std::cout << "binary_size = " << spirv_binary.size();
-    return -1;
+    filename = tmp_cc_filename;
+  } else {
+    // Assume GLSL
+    std::string tmp_spv_filename = "tmp.spv";
+    std::string tmp_cc_filename = "tmp.cc";
+    bool ret = compile_glsl(tmp_spv_filename, filename);
+    if (!ret) {
+      return -1;
+    }
+    ret = compile_spirv(tmp_cc_filename, tmp_spv_filename);
+    if (!ret) {
+      return -1;
+    }
+
+    filename = tmp_cc_filename;
   }
 
 	softcompute::ShaderEngine engine;

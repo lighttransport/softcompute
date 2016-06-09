@@ -5,20 +5,6 @@ newoption {
    description = "Path to llvm-config."
 }
 
--- libshaderc inc path
-newoption {
-   trigger     = "libshaderc-inc",
-   value       = "PATH",
-   description = "Path to libshaderc include."
-}
-
--- libshaderc_combined.a path
-newoption {
-   trigger     = "libshaderc-lib",
-   value       = "PATH",
-   description = "Path to libshaderc_combined.a."
-}
-
 -- SPIRV-Cross path
 newoption {
    trigger     = "spirv-cross",
@@ -66,18 +52,8 @@ project "SoftCompute"
       spirv_cross_path = _OPTIONS['spirv_cross']
    end
 
-   libshaderc_inc_path = "../shaderc/libshaderc/include"
-   if _OPTIONS['libshaderc_inc'] then
-      libshaderc_inc_path = _OPTIONS['libshaderc_inc']
-   end
-
-   libshaderc_lib_path = "../shaderc/build/libshaderc/"
-   if _OPTIONS['libshaderc_lib'] then
-      libshaderc_lib_path = _OPTIONS['libshaderc_lib']
-   end
-
+   includedirs { spirv_cross_path }
    includedirs { spirv_cross_path .. '/include' }
-   includedirs { libshaderc_inc_path }
 
    -- MacOSX. Guess we use gcc.
    configuration { "macosx" }
@@ -91,10 +67,6 @@ project "SoftCompute"
       buildoptions { "`" .. llvm_config .. " --cxxflags`" }
       -- For XCode7 + El Capitan
       buildoptions { '-isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.11.sdk' }
-
-      -- shaderc
-      libdirs { libshaderc_lib_path }
-      links { "shaderc_combined" } -- guess libshaderc_combined.a
 
       linkoptions { "`" .. llvm_config .. " --ldflags --libs --system-libs`" }
       links { "clangFrontend", "clangSerialization", "clangDriver", "clangCodeGen"
