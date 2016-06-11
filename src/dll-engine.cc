@@ -19,6 +19,7 @@
 #include <vector>
 
 #ifdef _WIN32
+#include <windows.h>
 #else
 #include <dlfcn.h>
 #include <sys/stat.h>
@@ -33,6 +34,20 @@ static std::string GetFileExtension(const std::string &FileName)
         return FileName.substr(FileName.find_last_of(".") + 1);
     return "";
 }
+
+#ifdef _WIN32
+std::wstring s2ws(const std::string& s)
+{
+    int len;
+    int slength = (int)s.length() + 1;
+    len = MultiByteToWideChar(CP_ACP, 0, s.c_str(), slength, 0, 0); 
+    wchar_t* buf = new wchar_t[len];
+    MultiByteToWideChar(CP_ACP, 0, s.c_str(), slength, buf, len);
+    std::wstring r(buf);
+    delete[] buf;
+    return r;
+}
+#endif
 
 namespace softcompute
 {
@@ -65,7 +80,7 @@ ShaderInstance::Impl::~Impl()
     {
         BOOL ret = FreeLibrary(reinterpret_cast<HMODULE>(handle_));
         assert(ret == TRUE);
-        return (ret == TRUE) ? true : false;
+        //return (ret == TRUE) ? true : false;
     }
 
     if (!filename_.empty())
@@ -116,19 +131,20 @@ bool ShaderInstance::Impl::Compile(const std::string &type, const std::vector<st
     void *entry_fn = nullptr;
 
 #ifdef _WIN32
-    HMODULE module = LoadLibrary(filename.c_str());
+	std::wstring s = s2ws(filename);
+    HMODULE module = LoadLibrary(TEXT("./tmp.dll"));
     if (module == nullptr)
     {
-        fprintf(stderr, "[DLLEngine] Cannot find/open shader file: %s\n", filename.c_str());
+        fprintf(stderr, "[DLLEngine] Cannot find/open shader file: %s\n", s.c_str());
         fprintf(stderr, "[DLLEngine] Err = %d\n", GetLastError());
         return false;
     }
 
     // Find shader body function
-    entry_point_ = GetProcAddress(module, "spirv_cross_get_interface");
+    entry_point_ = reinterpret_cast<void *>(GetProcAddress(module, "spirv_cross_get_interface"));
     if (entry_point_ == nullptr)
     {
-        fprintf(stderr, "[DLLEngine] Cannot find shader body function from: %s\n", filename.c_str());
+        fprintf(stderr, "[DLLEngine] Cannot find `spirv_cross_get_interface` in : %s\n", s.c_str());
         FreeLibrary(module);
         return false;
     }

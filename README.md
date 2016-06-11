@@ -6,7 +6,7 @@
 
 * Debug compute shader more easily.
 * Run compute shader where no compute shader capable OpenGL device is available.
-* dll based shader execution(Mac, Linux)
+* dll based shader execution(Mac, Linux, Windows MinGW)
 * clang/LLVM JIT shader execution(Mac and Linux)
 
 ## Limitations
@@ -20,6 +20,7 @@
 * glslang https://github.com/KhronosGroup/glslang
 * SPIR-Cross https://github.com/KhronosGroup/SPIRV-Cross
 * glm 0.9.7.4 or later http://glm.g-truc.net/
+* MinGW(on Windows)
 
 ### Optional
 
@@ -52,6 +53,14 @@ You can build JIT version of `SoftCompute` using `--enable-jit` flag.
 Then,
 
     $ export CXX=clang++
+    $ make
+
+## Build on Windows
+
+Currently MinGW + DLL version works on Windows.
+(Visual Studio + clang JIT, and Visual Studio + MinGW dll has some C++ language & linkage problem and cannot work at this time)
+
+    $ premake5 gmake
     $ make
 
 ## Setup and how to run

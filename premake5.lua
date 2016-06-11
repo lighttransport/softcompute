@@ -35,7 +35,11 @@ sources = {
 -- premake4.lua
 workspace "SoftCompute"
    configurations { "Release", "Debug" }
-
+   if os.is("windows") then
+      platforms { "x64", "x32" }
+   else
+      platforms { "native", "x64", "x32" }
+   end
 
 -- A project defines one build target
 project "SoftCompute"
@@ -161,6 +165,12 @@ project "SoftCompute"
       else
          links { 'pthread', 'dl' }
       end
+
+   -- MinGW
+   configuration { "windows", "gmake" }
+
+      defines { '__STDC_CONSTANT_MACROS', '__STDC_LIMIT_MACROS' } -- c99
+      buildoptions { '-std=c++11' }
 
 
    configuration "Debug"

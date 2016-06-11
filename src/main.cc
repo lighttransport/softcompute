@@ -216,6 +216,7 @@ bool compile_cpp(const std::string &output_filename, const std::string &cpp_file
     std::stringstream ss;
     ss << cpp;
     ss << " -std=c++11";
+	ss << " -I."; // @todo { set path to glm }
     ss << " -o " << output_filename;
 #ifdef __APPLE__
     ss << " -flat_namespace";
@@ -301,7 +302,11 @@ int main(int argc, char **argv)
 #ifdef ENABLE_JIT
     source_filename = filename;
 #else
+#ifdef _WIN32
+    std::string dll_filename = "tmp.dll"; // fixme.
+#else
     std::string dll_filename = "tmp.so"; // fixme.
+#endif
     bool ret = compile_cpp(dll_filename, filename);
     if (!ret)
     {
