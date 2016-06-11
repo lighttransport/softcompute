@@ -6,7 +6,7 @@
 
 * Debug compute shader more easily.
 * Run compute shader where no compute shader capable OpenGL device is available.
-* dll based shader execution(Mac, Win, Linux)
+* dll based shader execution(Mac, Linux)
 * clang/LLVM JIT shader execution(Mac and Linux)
 
 ## Limitations
@@ -20,7 +20,6 @@
 * glslang https://github.com/KhronosGroup/glslang
 * SPIR-Cross https://github.com/KhronosGroup/SPIRV-Cross
 * glm 0.9.7.4 or later http://glm.g-truc.net/
-* MinGW compiler(on Windows)
 
 ### Optional
 
@@ -65,6 +64,12 @@ Create cpp shader from GLSL using `glslangValidator` and `spirv-cross`
 Then,
 
     $ ./bin/softcompute ao.cc
+
+### DLL version
+
+C++ compiler is read from `CXX` environment, thus if you want specify C++ compiler explicitly, do something like this:
+
+    $ CXX=clang++ ./bin/softcompute ao.cc
 
 ### Run GLSL or SPV
 
