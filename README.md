@@ -127,7 +127,7 @@ Only support simple compute shader at this time.
 * [ ] Flexible shader value binding.
 * [ ] Debugger support.
 * [ ] GUI?
-* [ ] Windows support.
+* [ ] Windows JIT support.
 * [ ] Interactive edit & run.
   * [ ] Watch file changes.
 * [ ] Multi-threaded execution.
