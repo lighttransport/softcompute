@@ -5,13 +5,6 @@
 #include <sstream>
 #include <vector>
 
-#ifdef _WIN32
-#else
-#include <dlfcn.h>
-#include <sys/stat.h>
-#include <unistd.h>
-#endif
-
 #include <chrono>
 
 #include <stdint.h>
@@ -26,7 +19,11 @@ extern spirv_cross_shader_t *spirv_cross_construct(void);
 extern void spirv_cross_destruct(spirv_cross_shader_t *shader);
 extern void spirv_cross_invoke(spirv_cross_shader_t *shader);
 
+#ifdef ENABLE_JIT
 #include "jit-engine.h"
+#else
+#include "dll-engine.h"
+#endif
 
 typedef struct spirv_cross_interface *(*spirv_cross_get_interface_fn)();
 
@@ -200,6 +197,59 @@ bool compile_spirv(const std::string &output_filename, const std::string &spirv_
     return true;
 }
 
+// c++ -> dll
+bool compile_cpp(const std::string &output_filename, const std::string &cpp_filename)
+{
+
+    //
+    // Invoke C++ compiler
+    //
+    std::string cpp = "g++";
+    char *cpp_env = getenv("CXX");
+    if (cpp_env)
+    {
+        cpp = cpp_env;
+        printf("cpp = %s\n", cpp.c_str());
+    }
+
+    // Assume gcc or clang. Assume mingw on windows.
+    std::stringstream ss;
+    ss << cpp;
+    ss << " -std=c++11";
+    ss << " -o " << output_filename;
+#ifdef __APPLE__
+    ss << " -flat_namespace";
+    ss << " -bundle";
+    ss << " -undefined suppress";
+#endif
+    ss << " -shared";
+    ss << " -g";
+#ifdef __linux__
+    ss << " -fPIC";
+#endif
+    ss << " " << cpp_filename;
+
+    std::string cmd;
+    cmd = ss.str();
+    std::cout << cmd << std::endl;
+
+    bool ret = exec_command(cmd);
+    if (ret)
+    {
+        //
+        // Check if compiled dll file exists.
+        //
+        std::ifstream ifile(output_filename);
+        if (!ifile)
+        {
+            std::cerr << "Failed to compile C++" << std::endl;
+            return false;
+        }
+    }
+
+    return true;
+}
+
 int main(int argc, char **argv)
 {
     if (argc < 2)
@@ -247,12 +297,25 @@ int main(int argc, char **argv)
         filename = tmp_cc_filename;
     }
 
+    std::string source_filename;
+#ifdef ENABLE_JIT
+    source_filename = filename;
+#else
+    std::string dll_filename = "tmp.so"; // fixme.
+    bool ret = compile_cpp(dll_filename, filename);
+    if (!ret)
+    {
+        return -1;
+    }
+    source_filename = dll_filename;
+#endif
+
     softcompute::ShaderEngine engine;
 
     auto start_time = std::chrono::high_resolution_clock::now();
 
     std::vector<std::string> paths;
-    softcompute::ShaderInstance *instance = engine.Compile("comp", /* id */ 0, paths, filename);
+    softcompute::ShaderInstance *instance = engine.Compile("comp", /* id */ 0, paths, source_filename);
 
     if (!instance)
     {

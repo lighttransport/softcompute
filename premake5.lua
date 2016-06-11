@@ -1,3 +1,10 @@
+-- Enable JIT
+newoption {
+   trigger     = "enable-jit",
+   description = "Enable clang/LLVM JIT."
+}
+
+
 -- LLVM/Clang path
 newoption {
    trigger     = "llvm-config",
@@ -20,7 +27,6 @@ newoption {
 
 sources = {
    "src/main.cc"
- , "src/jit-engine.cc"
  , "src/OptionParser.cpp"
 }
 
@@ -41,6 +47,13 @@ project "SoftCompute"
       "./",
       "./include"
    }
+
+   if _OPTIONS['enable-jit'] then
+      defines { 'ENABLE_JIT' }
+      files { 'src/jit-engine.cc' }
+   else
+      files { 'src/dll-engine.cc' }
+   end
 
    llvm_config = "llvm-config"
    if _OPTIONS['llvm-config'] then
@@ -63,18 +76,20 @@ project "SoftCompute"
       -- glm
       includedirs { '/usr/local/include' }
 
-      -- includedirs { "`" .. llvm_config .. " --includedir`" }
-      buildoptions { "`" .. llvm_config .. " --cxxflags`" }
-      -- For XCode7 + El Capitan
-      buildoptions { '-isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.11.sdk' }
+      if _OPTIONS['enable-jit'] then
+         -- includedirs { "`" .. llvm_config .. " --includedir`" }
+         buildoptions { "`" .. llvm_config .. " --cxxflags`" }
+         -- For XCode7 + El Capitan
+         buildoptions { '-isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.11.sdk' }
 
-      linkoptions { "`" .. llvm_config .. " --ldflags --libs --system-libs`" }
-      links { "clangFrontend", "clangSerialization", "clangDriver", "clangCodeGen"
-            , "clangParse", "clangSema", "clangStaticAnalyzerFrontend"
-            , "clangStaticAnalyzerCheckers", "clangStaticAnalyzerCore"
-            , "clangAnalysis", "clangRewrite", "clangRewriteFrontend"
-            , "clangEdit", "clangAST", "clangLex", "clangBasic"
-            }
+         linkoptions { "`" .. llvm_config .. " --ldflags --libs --system-libs`" }
+         links { "clangFrontend", "clangSerialization", "clangDriver", "clangCodeGen"
+               , "clangParse", "clangSema", "clangStaticAnalyzerFrontend"
+               , "clangStaticAnalyzerCheckers", "clangStaticAnalyzerCore"
+               , "clangAnalysis", "clangRewrite", "clangRewriteFrontend"
+               , "clangEdit", "clangAST", "clangLex", "clangBasic"
+               }
+      end
 
       linkoptions { "-lpthread" }
 
@@ -133,16 +148,19 @@ project "SoftCompute"
          linkoptions { "-fsanitizer=address" }
       end
 
-      -- Strip "-O3 -NDEBUG"
-      buildoptions { "`" .. llvm_config .. " --cxxflags | sed -e 's/-O3 -NDEBUG//g'`" }
-      linkoptions { "-lclangFrontend", "-lclangSerialization", "-lclangDriver", "-lclangCodeGen"
-            , "-lclangParse", "-lclangSema", "-lclangStaticAnalyzerFrontend"
-            , "-lclangStaticAnalyzerCheckers", "-lclangStaticAnalyzerCore"
-            , "-lclangAnalysis", "-lclangRewriteFrontend", "-lclangRewrite"
-            , "-lclangEdit", "-lclangAST", "-lclangLex", "-lclangBasic"
-            }
-      linkoptions { "`" .. llvm_config .. " --ldflags --libs --system-libs`" }
-      --linkoptions { '-stdlib=libc++' }
+      if _OPTIONS['enable-jit'] then
+         -- Strip "-O3 -NDEBUG"
+         buildoptions { "`" .. llvm_config .. " --cxxflags | sed -e 's/-O3 -NDEBUG//g'`" }
+         linkoptions { "-lclangFrontend", "-lclangSerialization", "-lclangDriver", "-lclangCodeGen"
+               , "-lclangParse", "-lclangSema", "-lclangStaticAnalyzerFrontend"
+               , "-lclangStaticAnalyzerCheckers", "-lclangStaticAnalyzerCore"
+               , "-lclangAnalysis", "-lclangRewriteFrontend", "-lclangRewrite"
+               , "-lclangEdit", "-lclangAST", "-lclangLex", "-lclangBasic"
+               }
+         linkoptions { "`" .. llvm_config .. " --ldflags --libs --system-libs`" }
+      else
+         links { 'pthread', 'dl' }
+      end
 
 
    configuration "Debug"

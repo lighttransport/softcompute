@@ -58,7 +58,6 @@ using namespace clang::driver;
 using namespace llvm;
 
 #include "jit-engine.h"
-#include "spirv_cross/external_interface.h"
 
 static std::string GetFileExtension(const std::string &FileName)
 {

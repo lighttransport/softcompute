@@ -1,32 +1,34 @@
-# SoftCompute, CPU JIT execution of SPIR-V compute shader.
+# SoftCompute, CPU execution of SPIR-V compute shader.
 
 ![](screenshot/ao.png)
 
-## Purpose
+## Features and Purpose
 
 * Debug compute shader more easily.
 * Run compute shader where no compute shader capable OpenGL device is available.
+* dll based shader execution(Mac, Win, Linux)
+* clang/LLVM JIT shader execution(Mac and Linux)
+
+## Limitations
+
 * Currently `SoftCompute` only could be able to run very simple compute shader.
 
 ## Requirements
 
 * Premake5 https://premake.github.io/download.html
-* Recent C++11 ready clang or gcc compiler(compatible with clang/LLVM 3.8)
-* clang/LLVM 3.8+ http://llvm.org/releases/download.html
-  * GNU STL or libc++ depending on your clang/LLVM build configuration
-  * At least 3.8 prebuilt package for CentOS6 and El Capitan confirmed working
+* Recent C++11 ready clang or gcc compiler
 * glslang https://github.com/KhronosGroup/glslang
 * SPIR-Cross https://github.com/KhronosGroup/SPIRV-Cross
 * glm 0.9.7.4 or later http://glm.g-truc.net/
+* MinGW compiler(on Windows)
 
-## Build on Linux or MacOSX
+### Optional
 
-    $ premake5 gmake
+* clang/LLVM 3.8+ http://llvm.org/releases/download.html
+  * GNU STL or libc++ depending on your clang/LLVM build configuration
+  * At least 3.8 prebuilt package for CentOS6 and El Capitan confirmed working
 
-Or you can explicitly specify path to `llvm-config` and `SPIRV-Cross` repo path with
-
-    $ premake5 --llvm-config=/path/to/llvm-config --spirv-cross=/path/to/SPIRV-Cross gmake
-
+## Setup
 
 Put `glm` directory to this directory(or create a symlink).
 
@@ -36,6 +38,17 @@ Put `glm` directory to this directory(or create a symlink).
     bin
     src
     ... 
+
+## Build on Linux or MacOSX
+
+    $ premake5 --spirv-cross=/path/to/SPIRV-Cross gmake
+    $ make
+
+### JIT version
+
+You can build JIT version of `SoftCompute` using `--enable-jit` flag.
+
+    $ premake5 --enable-jit --llvm-config=/path/to/llvm-config --spirv-cross=/path/to/SPIRV-Cross gmake
 
 Then,
 
@@ -68,7 +81,7 @@ or
 
     $ ./bin/softcompute ao.spv
 
-### Note
+### Note on JIT version.
 
 You may need manually edit C/C++ header path in `src/jit-engine.cc`
 
@@ -76,7 +89,8 @@ You may need manually edit C/C++ header path in `src/jit-engine.cc`
 
 * Compile GLSL compute shader into SPIR-V binary using `glslangValidator`(through pipe execution)
 * Convert SPIR-V to C++ code using `spirv-cross`(through pipe execution, since `spirv-cross` uses C++ RTTI and LLVM precompiled binary is not built with RTTI)
-* Read C++ code and JIT execute using clang/LLVM.
+* (DLL) Compile C++ code into dll and open it using dlopen or LoadLibrary.
+* (JIT) Read C++ code and JIT execute using clang/LLVM.
 
 ## License
 
@@ -103,4 +117,5 @@ Only support simple compute shader at this time.
 * [ ] Interactive edit & run.
   * [ ] Watch file changes.
 * [ ] Multi-threaded execution.
+* [ ] gitsubmodule `glm`
 
