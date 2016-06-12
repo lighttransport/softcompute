@@ -46,7 +46,7 @@ public:
 
     /// Compile SPIRV-Cross generated cpp shader.
     ShaderInstance *Compile(const std::string &type, unsigned int shaderID, const std::vector<std::string> &paths,
-                            const std::string &filename);
+                            const std::string &options, const std::string &filename);
 
     ShaderInstance *GetShaderInstance(unsigned int shaderID)
     {

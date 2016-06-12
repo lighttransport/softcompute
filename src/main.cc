@@ -25,6 +25,8 @@ extern void spirv_cross_invoke(spirv_cross_shader_t *shader);
 #include "dll-engine.h"
 #endif
 
+#include "OptionParser.h"
+
 typedef struct spirv_cross_interface *(*spirv_cross_get_interface_fn)();
 
 #define LOCAL_SIZE_X 16
@@ -112,7 +114,7 @@ bool exec_command(const std::string &cmd)
 }
 
 // glsl -> spirv
-bool compile_glsl(const std::string &output_filename, const std::string &glsl_filename)
+bool compile_glsl(const std::string &output_filename, bool verbose, const std::string &glsl_filename)
 {
 
     //
@@ -123,7 +125,10 @@ bool compile_glsl(const std::string &output_filename, const std::string &glsl_fi
     if (binary_path)
     {
         binary = binary_path;
-        printf("glslangValidator = %s\n", binary.c_str());
+        if (verbose)
+        {
+            printf("glslangValidator = %s\n", binary.c_str());
+        }
     }
 
     std::stringstream ss;
@@ -134,7 +139,10 @@ bool compile_glsl(const std::string &output_filename, const std::string &glsl_fi
 
     std::string cmd;
     cmd = ss.str();
-    std::cout << cmd << std::endl;
+    if (verbose)
+    {
+        std::cout << cmd << std::endl;
+    }
 
     bool ret = exec_command(cmd);
     if (ret)
@@ -155,7 +163,7 @@ bool compile_glsl(const std::string &output_filename, const std::string &glsl_fi
 }
 
 // spirv -> c++
-bool compile_spirv(const std::string &output_filename, const std::string &spirv_filename)
+bool compile_spirv(const std::string &output_filename, bool verbose, const std::string &spirv_filename)
 {
 
     //
@@ -166,7 +174,10 @@ bool compile_spirv(const std::string &output_filename, const std::string &spirv_
     if (spirv_cross_path)
     {
         spirv_cross = spirv_cross_path;
-        printf("spirv-cross = %s\n", spirv_cross.c_str());
+        if (verbose)
+        {
+            printf("spirv-cross = %s\n", spirv_cross.c_str());
+        }
     }
 
     std::stringstream ss;
@@ -177,7 +188,10 @@ bool compile_spirv(const std::string &output_filename, const std::string &spirv_
 
     std::string cmd;
     cmd = ss.str();
-    std::cout << cmd << std::endl;
+    if (verbose)
+    {
+        std::cout << cmd << std::endl;
+    }
 
     bool ret = exec_command(cmd);
     if (ret)
@@ -198,7 +212,8 @@ bool compile_spirv(const std::string &output_filename, const std::string &spirv_
 }
 
 // c++ -> dll
-bool compile_cpp(const std::string &output_filename, const std::string &cpp_filename)
+bool compile_cpp(const std::string &output_filename, const std::string &options, bool verbose,
+                 const std::string &cpp_filename)
 {
 
     //
@@ -209,30 +224,36 @@ bool compile_cpp(const std::string &output_filename, const std::string &cpp_file
     if (cpp_env)
     {
         cpp = cpp_env;
-        printf("cpp = %s\n", cpp.c_str());
+        if (verbose)
+        {
+            printf("cpp = %s\n", cpp.c_str());
+        }
     }
 
     // Assume gcc or clang. Assume mingw on windows.
     std::stringstream ss;
     ss << cpp;
     ss << " -std=c++11";
-	ss << " -I."; // @todo { set path to glm }
+    ss << " -I."; // @todo { set path to glm }
     ss << " -o " << output_filename;
 #ifdef __APPLE__
     ss << " -flat_namespace";
     ss << " -bundle";
     ss << " -undefined suppress";
-#endif
+#else
     ss << " -shared";
     ss << " -g";
+#endif
 #ifdef __linux__
     ss << " -fPIC";
 #endif
+    ss << " " << options;
     ss << " " << cpp_filename;
 
     std::string cmd;
     cmd = ss.str();
-    std::cout << cmd << std::endl;
+    if (verbose)
+        std::cout << cmd << std::endl;
 
     bool ret = exec_command(cmd);
     if (ret)
@@ -253,13 +274,32 @@ bool compile_cpp(const std::string &output_filename, const std::string &cpp_file
 
 int main(int argc, char **argv)
 {
-    if (argc < 2)
+
+    using optparse::OptionParser;
+
+    OptionParser parser = OptionParser().description("options");
+
+    parser.add_option("-o", "--options").help("Compiler options. e.g. \"-O2\"");
+    parser.add_option("-v", "--verbose").action("store_true").set_default("false").help("Verbose mode.");
+
+    optparse::Values options = parser.parse_args(argc, argv);
+    std::vector<std::string> args = parser.args();
+
+    if (args.empty())
     {
-        std::cout << "Needs input cpp shader." << std::endl;
-        return EXIT_FAILURE;
+        parser.print_help();
+        return -1;
     }
 
-    std::string filename = argv[1];
+    bool verbose = false;
+    if (options.get("verbose"))
+    {
+        verbose = true;
+    }
+
+    std::string compiler_options = options["options"];
+
+    std::string filename = args[0];
 
     const char *ext = strrchr(filename.c_str(), '.');
 
@@ -271,7 +311,7 @@ int main(int argc, char **argv)
     {
         // Assume SPIR-V binary
         std::string tmp_cc_filename = "tmp.cc";
-        bool ret = compile_spirv(tmp_cc_filename, filename);
+        bool ret = compile_spirv(tmp_cc_filename, verbose, filename);
         if (!ret)
         {
             return -1;
@@ -284,12 +324,12 @@ int main(int argc, char **argv)
         // Assume GLSL
         std::string tmp_spv_filename = "tmp.spv";
         std::string tmp_cc_filename = "tmp.cc";
-        bool ret = compile_glsl(tmp_spv_filename, filename);
+        bool ret = compile_glsl(tmp_spv_filename, verbose, filename);
         if (!ret)
         {
             return -1;
         }
-        ret = compile_spirv(tmp_cc_filename, tmp_spv_filename);
+        ret = compile_spirv(tmp_cc_filename, verbose, tmp_spv_filename);
         if (!ret)
         {
             return -1;
@@ -307,7 +347,7 @@ int main(int argc, char **argv)
 #else
     std::string dll_filename = "tmp.so"; // fixme.
 #endif
-    bool ret = compile_cpp(dll_filename, filename);
+    bool ret = compile_cpp(dll_filename, compiler_options, verbose, filename);
     if (!ret)
     {
         return -1;
@@ -320,7 +360,8 @@ int main(int argc, char **argv)
     auto start_time = std::chrono::high_resolution_clock::now();
 
     std::vector<std::string> paths;
-    softcompute::ShaderInstance *instance = engine.Compile("comp", /* id */ 0, paths, source_filename);
+    softcompute::ShaderInstance *instance =
+        engine.Compile("comp", /* id */ 0, paths, compiler_options, source_filename);
 
     if (!instance)
     {

@@ -122,7 +122,8 @@ public:
     Impl();
     ~Impl();
 
-    bool Compile(const std::string &type, const std::vector<std::string> &paths, const std::string &filename);
+    bool Compile(const std::string &type, const std::vector<std::string> &paths, const std::string &options,
+                 const std::string &filename);
     void *GetInterface();
 
 private:
@@ -146,7 +147,7 @@ ShaderInstance::Impl::~Impl()
 }
 
 bool ShaderInstance::Impl::Compile(const std::string &type, const std::vector<std::string> &paths,
-                                   const std::string &filename)
+                                   const std::string &options, const std::string &filename)
 {
     std::string ext = GetFileExtension(filename);
 
@@ -199,6 +200,7 @@ bool ShaderInstance::Impl::Compile(const std::string &type, const std::vector<st
     Args.push_back("-fno-stack-protector"); // Avoid unresolved __stack_chk_fail symbol error in musl libc environment.
 
     Args.push_back("-std=c++11");
+    Args.push_back(options.c_str());
 
     Args.push_back("-fno-exceptions");
     Args.push_back("-fno-rtti");
@@ -422,7 +424,7 @@ ShaderInstance::~ShaderInstance()
     delete impl;
 }
 
-bool ShaderInstance::Compile(const std::string &type, const std::vector<std::string> &paths,
+bool ShaderInstance::Compile(const std::string &type, const std::vector<std::string> &paths, const std::string &options,
                              const std::string &filename)
 {
     assert(impl);
@@ -432,7 +434,7 @@ bool ShaderInstance::Compile(const std::string &type, const std::vector<std::str
         return false;
     }
 
-    return impl->Compile(type, paths, filename);
+    return impl->Compile(type, paths, options, filename);
 }
 
 void *ShaderInstance::GetInterface()
@@ -452,7 +454,7 @@ public:
     ~Impl();
 
     ShaderInstance *Compile(const std::string &type, unsigned int shaderID, const std::vector<std::string> &paths,
-                            const std::string &filename);
+                            const std::string &options, const std::string &filename);
 
     void *GetInterface();
 
@@ -461,7 +463,8 @@ private:
 };
 
 ShaderInstance *ShaderEngine::Impl::Compile(const std::string &type, unsigned int shaderID,
-                                            const std::vector<std::string> &paths, const std::string &filename)
+                                            const std::vector<std::string> &paths, const std::string &options,
+                                            const std::string &filename)
 {
     static bool initialized = false;
     if (!initialized)
@@ -474,7 +477,7 @@ ShaderInstance *ShaderEngine::Impl::Compile(const std::string &type, unsigned in
     }
 
     ShaderInstance *shaderInstance = new ShaderInstance();
-    bool ret = shaderInstance->Compile(type, paths, filename);
+    bool ret = shaderInstance->Compile(type, paths, options, filename);
     if (!ret)
     {
         fprintf(stderr, "[Shader] Failed to compile shader: %s\n", filename.c_str());
@@ -505,7 +508,8 @@ ShaderEngine::~ShaderEngine()
 }
 
 ShaderInstance *ShaderEngine::Compile(const std::string &type, unsigned int shaderID,
-                                      const std::vector<std::string> &paths, const std::string &filename)
+                                      const std::vector<std::string> &paths, const std::string &options,
+                                      const std::string &filename)
 {
 
     assert(impl);
@@ -521,7 +525,7 @@ ShaderInstance *ShaderEngine::Compile(const std::string &type, unsigned int shad
         }
     }
 
-    ShaderInstance *shaderInstance = impl->Compile(type, shaderID, paths, filename);
+    ShaderInstance *shaderInstance = impl->Compile(type, shaderID, paths, options, filename);
 
     shaderInstanceMap_[shaderID] = shaderInstance;
 
