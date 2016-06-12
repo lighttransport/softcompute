@@ -72,7 +72,12 @@ Create cpp shader from GLSL using `glslangValidator` and `spirv-cross`
 
 Then,
 
-    $ ./bin/softcompute ao.cc
+    $ ./bin/softcompute <options> ao.cc
+
+### Options
+
+    -o "STRING"     : Specify custom C++ compiler options. e.g. -o "-O2"
+    -v              : Verbose mode
 
 ### DLL version
 
