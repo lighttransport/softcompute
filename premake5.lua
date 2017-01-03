@@ -64,7 +64,7 @@ project "SoftCompute"
       llvm_config = _OPTIONS['llvm-config']
    end
 
-   spirv_cross_path = "../SPIRV-Cross/"
+   spirv_cross_path = "./SPIRV-Cross/" -- Default path to SPIRV-Cross(submodule)
    if _OPTIONS['spirv_cross'] then
       spirv_cross_path = _OPTIONS['spirv_cross']
    end
@@ -72,13 +72,22 @@ project "SoftCompute"
    includedirs { spirv_cross_path }
    includedirs { spirv_cross_path .. '/include' }
 
+   flags { "c++11" }
+
+   -- Disable exception(for SPIRV-Cross code)
+   defines { "SPIRV_CROSS_EXCEPTIONS_TO_ASSERTIONS=1" }
+
    -- MacOSX. Guess we use gcc.
    configuration { "macosx" }
 
-      buildoptions { '-std=c++11' }
+      -- Assume clang
+      buildoptions { "-Weverything -Werror -Wno-c++98-compat -Wno-c++98-compat-pedantic" } 
 
       -- glm
       includedirs { '/usr/local/include' }
+
+      -- glm(submodule)
+      includedirs { './glm' }
 
       if _OPTIONS['enable-jit'] then
          -- includedirs { "`" .. llvm_config .. " --includedir`" }
@@ -143,7 +152,6 @@ project "SoftCompute"
    configuration {"linux"}
       defines { '__STDC_CONSTANT_MACROS', '__STDC_LIMIT_MACROS' } -- c99
 
-      buildoptions { '-std=c++11' }
       buildoptions { "-pthread" }
       --buildoptions { '-stdlib=libc++' }
 
