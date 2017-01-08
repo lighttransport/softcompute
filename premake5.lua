@@ -27,6 +27,7 @@ newoption {
 
 sources = {
    "src/main.cc"
+ , "src/softgl.cc"
  , "src/OptionParser.cpp"
 }
 
