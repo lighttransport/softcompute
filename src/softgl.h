@@ -27,6 +27,8 @@ typedef char GLchar;
 typedef ptrdiff_t GLintptr;
 typedef ptrdiff_t GLsizeiptr;
 
+const int GL_COMPUTE_SHADER = 0x91B9;
+
 const int GL_BYTE = 0x1400;
 const int GL_UNSIGNED_BYTE = 0x1401;
 const int GL_SHORT = 0x1402;
@@ -34,6 +36,8 @@ const int GL_UNSIGNED_SHORT = 0x1403;
 const int GL_INT = 0x1404;
 const int GL_UNSIGNED_INT = 0x1405;
 const int GL_FLOAT = 0x1406;
+
+const int GL_SHADER_BINARY_FORMAT_SPIR_V_ARB = 0x9551;
 
 const int GL_SHADER_STORAGE_BARRIER_BIT = 0x2000;
 const int GL_MAX_COMBINED_SHADER_OUTPUT_RESOURCES = 0x8F39;
@@ -86,6 +90,23 @@ void glBufferData(GLenum target, GLsizeiptr size, const GLvoid *data, GLenum usa
 
 void *glMapBuffer(GLenum target, GLenum access);
 GLboolean glUnmapBuffer(GLenum target);
+
+GLuint glCreateProgram();
+GLuint glCreateShader(GLenum shaderType);
+void glUseProgram(GLuint program);
+void glAttachShader(GLuint program, GLuint shader);
+void glCompileShader( GLuint shader);
+void glShaderSource(  GLuint shader,
+  GLsizei count,
+  const GLchar * const *string,
+  const GLint *length);
+void glShaderBinary(  GLsizei n,
+  const GLuint *shaders,
+  GLenum binaryformat,
+  const void *binary,
+  GLsizei length);
+
+void glLinkProgram(GLuint program);
 
 void InitSoftGL();
 void ReleaseSoftGL();
