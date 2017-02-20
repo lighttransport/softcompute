@@ -28,10 +28,6 @@
 #pragma clang diagnostic ignored "-Wweak-vtables"
 #endif
 
-#include "spirv_cross/external_interface.h"
-#include "spirv_cross/internal_interface.hpp"
-#include "spirv_cpp.hpp"
-
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 
@@ -42,6 +38,8 @@
 #endif
 
 #include "softgl.h"
+
+#if 0
 
 extern spirv_cross_shader_t *spirv_cross_construct(void);
 extern void spirv_cross_destruct(spirv_cross_shader_t *shader);
@@ -489,6 +487,38 @@ int main(int argc, char **argv)
     SaveImageAsPNG("output.png", &outbuf.at(0), WINDOW_SIZE, WINDOW_SIZE);
 
     std::cout << "output.png written." << std::endl;
+
+    return EXIT_SUCCESS;
+}
+#endif
+
+int main(int argc, char **argv)
+{
+    using optparse::OptionParser;
+
+    OptionParser parser = OptionParser().description("options");
+
+    parser.add_option("-o", "--options").help("Compiler options. e.g. \"-O2\"");
+    parser.add_option("-v", "--verbose").action("store_true").set_default("false").help("Verbose mode.");
+
+    optparse::Values options = parser.parse_args(argc, argv);
+    std::vector<std::string> args = parser.args();
+
+    if (args.empty())
+    {
+        parser.print_help();
+        return -1;
+    }
+
+    bool verbose = false;
+    if (options.get("verbose"))
+    {
+        verbose = true;
+    }
+
+    std::string compiler_options = options["options"];
+
+    std::string filename = args[0];
 
     return EXIT_SUCCESS;
 }

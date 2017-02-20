@@ -107,6 +107,7 @@ void glShaderBinary(  GLsizei n,
   GLsizei length);
 
 void glLinkProgram(GLuint program);
+void glDeleteProgram(GLuint program);
 
 void InitSoftGL();
 void ReleaseSoftGL();
