@@ -23,9 +23,9 @@ sources = {
  , "src/softgl.cc"
  , "src/OptionParser.cpp"
  -- SPIRV-Cross
- , "SPIRV-Cross/spirv_cross.cpp"
- , "SPIRV-Cross/spirv_cfg.cpp"
- , "SPIRV-Cross/spirv_glsl.cpp"
+ , "third_party/SPIRV-Cross/spirv_cross.cpp"
+ , "third_party/SPIRV-Cross/spirv_cfg.cpp"
+ , "third_party/SPIRV-Cross/spirv_glsl.cpp"
 }
 
 
@@ -62,7 +62,7 @@ project "SoftCompute"
       llvm_config = _OPTIONS['llvm-config']
    end
 
-   spirv_cross_path = "./SPIRV-Cross/" -- path to SPIRV-Cross(submodule)
+   spirv_cross_path = "./third_party/SPIRV-Cross/" -- path to SPIRV-Cross(submodule)
 
    includedirs { spirv_cross_path }
    includedirs { spirv_cross_path .. '/include' }
@@ -78,11 +78,8 @@ project "SoftCompute"
       -- Assume clang
       buildoptions { "-Weverything -Werror -Wno-padded -Wno-c++98-compat -Wno-c++98-compat-pedantic" } 
 
-      -- glm
-      includedirs { '/usr/local/include' }
-
       -- glm(submodule)
-      includedirs { './glm' }
+      includedirs { './third_party/glm' }
 
       if _OPTIONS['enable-jit'] then
          -- includedirs { "`" .. llvm_config .. " --includedir`" }
@@ -149,6 +146,9 @@ project "SoftCompute"
 
       buildoptions { "-pthread" }
       --buildoptions { '-stdlib=libc++' }
+
+      -- glm(submodule)
+      includedirs { './third_party/glm' }
 
       if _OPTIONS['with-asan'] then
          buildoptions { "-fsanitizer=address -fno-omit-frame-pointer" }
