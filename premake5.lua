@@ -12,13 +12,6 @@ newoption {
    description = "Path to llvm-config."
 }
 
--- SPIRV-Cross path
-newoption {
-   trigger     = "spirv-cross",
-   value       = "PATH",
-   description = "Path to SPIRV-Cross."
-}
-
 -- Address-sanitizerr
 newoption {
    trigger     = "with-asan",
@@ -29,8 +22,11 @@ sources = {
    "src/main.cc"
  , "src/softgl.cc"
  , "src/OptionParser.cpp"
+ -- SPIRV-Cross
+ , "SPIRV-Cross/spirv_cross.cpp"
+ , "SPIRV-Cross/spirv_cfg.cpp"
+ , "SPIRV-Cross/spirv_glsl.cpp"
 }
-
 
 
 -- premake4.lua
@@ -41,6 +37,7 @@ workspace "SoftCompute"
    else
       platforms { "native", "x64", "x32" }
    end
+
 
 -- A project defines one build target
 project "SoftCompute"
@@ -54,7 +51,7 @@ project "SoftCompute"
    }
 
    if _OPTIONS['enable-jit'] then
-      defines { 'ENABLE_JIT' }
+      defines { 'SOFTCOMPUTE_ENABLE_JIT' }
       files { 'src/jit-engine.cc' }
    else
       files { 'src/dll-engine.cc' }
@@ -65,10 +62,7 @@ project "SoftCompute"
       llvm_config = _OPTIONS['llvm-config']
    end
 
-   spirv_cross_path = "./SPIRV-Cross/" -- Default path to SPIRV-Cross(submodule)
-   if _OPTIONS['spirv_cross'] then
-      spirv_cross_path = _OPTIONS['spirv_cross']
-   end
+   spirv_cross_path = "./SPIRV-Cross/" -- path to SPIRV-Cross(submodule)
 
    includedirs { spirv_cross_path }
    includedirs { spirv_cross_path .. '/include' }
@@ -82,7 +76,7 @@ project "SoftCompute"
    configuration { "macosx" }
 
       -- Assume clang
-      buildoptions { "-Weverything -Werror -Wno-c++98-compat -Wno-c++98-compat-pedantic" } 
+      buildoptions { "-Weverything -Werror -Wno-padded -Wno-c++98-compat -Wno-c++98-compat-pedantic" } 
 
       -- glm
       includedirs { '/usr/local/include' }
@@ -183,6 +177,7 @@ project "SoftCompute"
 
 
    configuration "Debug"
+
       defines { "DEBUG" } -- -DDEBUG
       flags { "Symbols" }
       targetdir "bin"

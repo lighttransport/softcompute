@@ -39,7 +39,7 @@ Note that Compilation using Visual Sutdio(MSC) is not fully supported yet.
 
     $ git submodule update --init
 
-`glm` and `SPIRV-Cross` will be pulled.
+`glm` and `SPIRV-Cross` will be added as a submodule.
 
 ## Build on Linux or MacOSX
 

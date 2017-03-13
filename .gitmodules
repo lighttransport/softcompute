@@ -3,4 +3,4 @@
 	url = https://github.com/g-truc/glm.git
 [submodule "SPIRV-Cross"]
 	path = SPIRV-Cross
-	url = https://github.com/KhronosGroup/SPIRV-Cross.git
+	url = https://github.com/syoyo/SPIRV-Cross.git
