@@ -39,6 +39,8 @@
 #include "spirv_cpp.hpp"
 #include "spirv_glsl.hpp"
 
+#include "loguru/loguru.hpp"
+
 #ifdef __clang__
 #pragma clang diagnostic pop
 #endif
@@ -888,13 +890,13 @@ GLint glGetUniformLocation( GLuint program,
 {
   InitializeGLContext();
   (void)program;
+  (void)name;
+
+  ABORT_F("TODO");
   //if (gCtx->glsl_program_map.find(program) == gCtx->glsl_program_map.end()) {
   //  return -1;
   //}
-
-  (void)name;
-
-  return -1;
+  //return -1;
 }
 
 void glAttachShader(GLuint program, GLuint shader)

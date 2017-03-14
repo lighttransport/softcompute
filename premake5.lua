@@ -22,6 +22,7 @@ sources = {
    "src/main.cc"
  , "src/softgl.cc"
  , "src/OptionParser.cpp"
+ , "src/loguru-impl.cc"
  -- SPIRV-Cross
  , "third_party/SPIRV-Cross/spirv_cross.cpp"
  , "third_party/SPIRV-Cross/spirv_cfg.cpp"
@@ -62,10 +63,14 @@ project "SoftCompute"
       llvm_config = _OPTIONS['llvm-config']
    end
 
+   -- SPIRV-Cross
    spirv_cross_path = "./third_party/SPIRV-Cross/" -- path to SPIRV-Cross(submodule)
 
    includedirs { spirv_cross_path }
    includedirs { spirv_cross_path .. '/include' }
+
+   -- Loguru
+   includedirs { "./third_party/" }
 
    flags { "c++11" }
 
