@@ -1,11 +1,11 @@
 #include "softgl.h"
 
-#include <cassert>
-#include <vector>
-#include <map>
-#include <iostream>
 #include <algorithm>
+#include <cassert>
 #include <fstream>
+#include <iostream>
+#include <map>
+#include <vector>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -34,9 +34,9 @@
 #pragma clang diagnostic ignored "-Wweak-vtables"
 #endif
 
+#include "spirv_cpp.hpp"
 #include "spirv_cross/external_interface.h"
 #include "spirv_cross/internal_interface.hpp"
-#include "spirv_cpp.hpp"
 #include "spirv_glsl.hpp"
 
 #include "loguru/loguru.hpp"
@@ -104,38 +104,39 @@ struct Uniform
 
 struct Program
 {
-  std::vector<uint32_t> shaders; // List of attached shaders
+    std::vector<uint32_t> shaders; // List of attached shaders
 
-  bool deleted;
-  bool linked;
-  char buf[6];
+    bool deleted;
+    bool linked;
+    char buf[6];
 
-  spirv_cross::CompilerGLSL* glsl;
+    spirv_cross::CompilerGLSL *glsl;
 
-  softcompute::ShaderInstance *instance;
-  spirv_cross_shader_t *shader;
+    softcompute::ShaderInstance *instance;
+    spirv_cross_shader_t *shader;
 
-  Program() {
-    deleted = true;
-    linked = false;
-    glsl = nullptr;
-    instance = nullptr;
-    shader = nullptr;
-  }
-
+    Program()
+    {
+        deleted = true;
+        linked = false;
+        glsl = nullptr;
+        instance = nullptr;
+        shader = nullptr;
+    }
 };
 
 struct Shader
 {
-  std::vector<uint32_t> binary; // Shader binary input
-  std::string source; // Shader source input
+    std::vector<uint32_t> binary; // Shader binary input
+    std::string source; // Shader source input
 
-  bool deleted;
-  char buf[7];
+    bool deleted;
+    char buf[7];
 
-  Shader() {
-    deleted = true;
-  }
+    Shader()
+    {
+        deleted = true;
+    }
 };
 
 class SoftGLContext
@@ -169,7 +170,6 @@ public:
     std::vector<Buffer> buffers;
     std::vector<Program> programs;
     std::vector<Shader> shaders;
-
 };
 
 static SoftGLContext *gCtx = nullptr;
@@ -178,47 +178,50 @@ static SoftGLContext *gCtx = nullptr;
 // Simple offline complilation functions.
 
 /// Generate unique filename.
-static std::string GenerateUniqueFilename() {
+static std::string GenerateUniqueFilename()
+{
 
-char basename[] = "softcompute_XXXXXX";
+    char basename[] = "softcompute_XXXXXX";
 
 #if defined(_WIN32)
 
-  assert(strlen(basename) < 1023);
+    assert(strlen(basename) < 1023);
 
-  char buf[1024];
-  strncpy(buf, basename, strlen(basename));
-  buf[strlen(basename)] = '\0';
+    char buf[1024];
+    strncpy(buf, basename, strlen(basename));
+    buf[strlen(basename)] = '\0';
 
-  size_t len = strlen(buf) + 1;
-  int err =
-      _mktemp_s(buf, len); // prefix will be overwritten with actual filename
-  if (err != 0) {
-    std::cerr << "Failed to create unique filename.\n";
-    return std::string();
-  }
+    size_t len = strlen(buf) + 1;
+    int err = _mktemp_s(buf, len); // prefix will be overwritten with actual filename
+    if (err != 0)
+    {
+        std::cerr << "Failed to create unique filename.\n";
+        return std::string();
+    }
 
-  printf("DBG: Unique name: %s", buf);
+    printf("DBG: Unique name: %s", buf);
 
-  std::string name = std::string(buf);
+    std::string name = std::string(buf);
 
 #else
-  int fd = mkstemp(basename); // prefix will be overwritten with actual filename
-  if (fd == -1) {
-    std::cerr << "Failed to create unique filename.\n";
-    return std::string();
-  }
-  close(fd);
-  int ret = unlink(basename);
-  if (ret == -1) {
-    std::cerr << "Failed to delete file: " << basename << std::endl;
-  }
+    int fd = mkstemp(basename); // prefix will be overwritten with actual filename
+    if (fd == -1)
+    {
+        std::cerr << "Failed to create unique filename.\n";
+        return std::string();
+    }
+    close(fd);
+    int ret = unlink(basename);
+    if (ret == -1)
+    {
+        std::cerr << "Failed to delete file: " << basename << std::endl;
+    }
 
-  std::string name = std::string(basename);
+    std::string name = std::string(basename);
 
 #endif
 
-  return name;
+    return name;
 }
 
 static bool exec_command(std::vector<std::string> *outputs, const std::string &cmd)
@@ -343,7 +346,7 @@ static bool compile_spirv(const std::string &output_filename, bool verbose, cons
     ss << " --cpp";
     ss << " " << spirv_filename;
     ss << " --dump-resources";
-    ss << " 2>&1"; // spirv-cross dumps info to stderr. redirect stderr to stdout to catch dump info. 
+    ss << " 2>&1"; // spirv-cross dumps info to stderr. redirect stderr to stdout to catch dump info.
 
     std::string cmd;
     cmd = ss.str();
@@ -365,16 +368,15 @@ static bool compile_spirv(const std::string &output_filename, bool verbose, cons
             std::cerr << "Failed to translate SPIR-V to C++" << std::endl;
             return false;
         }
-      return true;
+        return true;
     }
 
     return false;
-
 }
 
 // c++ -> dll
 static bool compile_cpp(const std::string &output_filename, const std::string &options, bool verbose,
-                 const std::string &cpp_filename)
+                        const std::string &cpp_filename)
 {
 
     //
@@ -439,11 +441,18 @@ static bool compile_cpp(const std::string &output_filename, const std::string &o
 
 void InitSoftGL()
 {
+    // Pass dummy argc/argv;
+    int argc = 1;
+    const char *argv[] = { "softgl", nullptr };
+
+    loguru::init(argc, const_cast<char **>(argv));
+    LOG_F(INFO, "Initialize SoftGL context");
     gCtx = new SoftGLContext();
 }
 
 void ReleaseSoftGL()
 {
+    LOG_F(INFO, "Relese SoftGL context");
     delete gCtx;
     gCtx = nullptr;
 }
@@ -459,7 +468,8 @@ static void InitializeGLContext()
 void glUniform1f(GLint location, GLfloat v0)
 {
     InitializeGLContext();
-    if (location < 0) return;
+    if (location < 0)
+        return;
     assert(static_cast<size_t>(location) < gCtx->uniforms.size());
 
     gCtx->uniforms[static_cast<size_t>(location)].fv[0] = v0;
@@ -471,7 +481,8 @@ void glUniform2f(GLint location, GLfloat v0, GLfloat v1)
 {
 
     InitializeGLContext();
-    if (location < 0) return;
+    if (location < 0)
+        return;
     assert(static_cast<size_t>(location) < gCtx->uniforms.size());
 
     gCtx->uniforms[static_cast<size_t>(location)].fv[0] = v0;
@@ -483,7 +494,8 @@ void glUniform2f(GLint location, GLfloat v0, GLfloat v1)
 void glUniform3f(GLint location, GLfloat v0, GLfloat v1, GLfloat v2)
 {
     InitializeGLContext();
-    if (location < 0) return;
+    if (location < 0)
+        return;
     assert(static_cast<size_t>(location) < gCtx->uniforms.size());
 
     gCtx->uniforms[static_cast<size_t>(location)].fv[0] = v0;
@@ -496,7 +508,8 @@ void glUniform3f(GLint location, GLfloat v0, GLfloat v1, GLfloat v2)
 void glUniform4f(GLint location, GLfloat v0, GLfloat v1, GLfloat v2, GLfloat v3)
 {
     InitializeGLContext();
-    if (location < 0) return;
+    if (location < 0)
+        return;
     assert(static_cast<size_t>(location) < gCtx->uniforms.size());
 
     gCtx->uniforms[static_cast<size_t>(location)].fv[0] = v0;
@@ -510,7 +523,8 @@ void glUniform4f(GLint location, GLfloat v0, GLfloat v1, GLfloat v2, GLfloat v3)
 void glUniform1i(GLint location, GLint v0)
 {
     InitializeGLContext();
-    if (location < 0) return;
+    if (location < 0)
+        return;
     assert(static_cast<size_t>(location) < gCtx->uniforms.size());
 
     gCtx->uniforms[static_cast<size_t>(location)].iv[0] = v0;
@@ -521,7 +535,8 @@ void glUniform1i(GLint location, GLint v0)
 void glUniform2i(GLint location, GLint v0, GLint v1)
 {
     InitializeGLContext();
-    if (location < 0) return;
+    if (location < 0)
+        return;
     assert(static_cast<size_t>(location) < gCtx->uniforms.size());
 
     gCtx->uniforms[static_cast<size_t>(location)].iv[0] = v0;
@@ -533,7 +548,8 @@ void glUniform2i(GLint location, GLint v0, GLint v1)
 void glUniform3i(GLint location, GLint v0, GLint v1, GLint v2)
 {
     InitializeGLContext();
-    if (location < 0) return;
+    if (location < 0)
+        return;
     assert(static_cast<size_t>(location) < gCtx->uniforms.size());
 
     gCtx->uniforms[static_cast<size_t>(location)].iv[0] = v0;
@@ -546,7 +562,8 @@ void glUniform3i(GLint location, GLint v0, GLint v1, GLint v2)
 void glUniform4i(GLint location, GLint v0, GLint v1, GLint v2, GLint v3)
 {
     InitializeGLContext();
-    if (location < 0) return;
+    if (location < 0)
+        return;
     assert(static_cast<size_t>(location) < gCtx->uniforms.size());
 
     gCtx->uniforms[static_cast<size_t>(location)].iv[0] = v0;
@@ -601,159 +618,172 @@ GLuint glCreateProgram()
 
 GLuint glCreateShader(GLenum shader_type)
 {
-  assert(shader_type == GL_COMPUTE_SHADER);
+    assert(shader_type == GL_COMPUTE_SHADER);
 
-  // Simple linear seach to find available Shader.
-  // Skip 0th index since its reserved.
-  for (size_t i = 1; i < gCtx->shaders.size(); i++)
-  {
-      if (gCtx->shaders[i].deleted)
-      {
-          gCtx->shaders[i].deleted = false;
-          return static_cast<GLuint>(i);
-      }
-  }
+    // Simple linear seach to find available Shader.
+    // Skip 0th index since its reserved.
+    for (size_t i = 1; i < gCtx->shaders.size(); i++)
+    {
+        if (gCtx->shaders[i].deleted)
+        {
+            gCtx->shaders[i].deleted = false;
+            return static_cast<GLuint>(i);
+        }
+    }
 
-  return 0;
+    return 0;
 }
 
-void glLinkProgram( GLuint program)
+void glLinkProgram(GLuint program)
 {
-  InitializeGLContext();
-  
-  assert(program < kMaxPrograms);
+    InitializeGLContext();
 
-  if (program == 0) return;
+    assert(program < kMaxPrograms);
 
-  Program &prog = gCtx->programs[program];
+    if (program == 0)
+        return;
 
-  if (prog.deleted) {
-    std::cerr << "[SoftGL] Program " << program << " is not created." << std::endl;
-    return;
-  }
+    Program &prog = gCtx->programs[program];
 
-  // Currently only one shader per program.
-  assert(prog.shaders.size() == 1);
+    if (prog.deleted)
+    {
+        std::cerr << "[SoftGL] Program " << program << " is not created." << std::endl;
+        return;
+    }
 
-  GLuint shader_idx = prog.shaders[0];
+    // Currently only one shader per program.
+    assert(prog.shaders.size() == 1);
 
-  if (shader_idx == 0) return;
+    GLuint shader_idx = prog.shaders[0];
 
-  assert(shader_idx < gCtx->shaders.size());
+    if (shader_idx == 0)
+        return;
 
-  const Shader &shader = gCtx->shaders[shader_idx];
+    assert(shader_idx < gCtx->shaders.size());
 
-  std::string basename = GenerateUniqueFilename();
-  std::string spirv_filename = basename + ".spv";
-  std::string cpp_filename = basename + ".cc";
+    const Shader &shader = gCtx->shaders[shader_idx];
+
+    std::string basename = GenerateUniqueFilename();
+    std::string spirv_filename = basename + ".spv";
+    std::string cpp_filename = basename + ".cc";
 
 #ifdef _WIN32
-  std::string dll_filename = basename + ".dll";
+    std::string dll_filename = basename + ".dll";
 #else
-  std::string dll_filename = basename + ".so";
+    std::string dll_filename = basename + ".so";
 #endif
 
-  if (shader.source.size() > 0) {
-    // Assume GLSL source
-
-    std::string glsl_filename = basename + ".comp";
-
+    if (shader.source.size() > 0)
     {
-      std::ofstream ofs(glsl_filename);
-      if (!ofs) {
-        std::cerr << "Failed to write shader source to [" << glsl_filename << "]" << std::endl;
-        return;
-      }
+        // Assume GLSL source
 
-      ofs << shader.source;
-      ofs.close();
-    }
+        std::string glsl_filename = basename + ".comp";
 
-    bool ret = compile_glsl(spirv_filename, /* verbose */true, glsl_filename);
-    if (!ret) {
-      std::cerr << "Failed to compile GLSL to SPIR-V" << std::endl;
-      return;
-    }
+        {
+            std::ofstream ofs(glsl_filename);
+            if (!ofs)
+            {
+                std::cerr << "Failed to write shader source to [" << glsl_filename << "]" << std::endl;
+                return;
+            }
 
-    ret = compile_spirv(cpp_filename, /* verbose */true, spirv_filename);
-    if (!ret) {
-      std::cerr << "Failed to compile SPIR-V to C++" << std::endl;
-      return;
-    }
-
-    {
-      std::vector<uint32_t> buf;
-      {
-        std::ifstream ifs(spirv_filename);
-        if (!ifs) {
-          std::cerr << "Failed to read SPIR-V file : " << spirv_filename << std::endl;
-          return;
+            ofs << shader.source;
+            ofs.close();
         }
 
-        ifs.seekg (0, ifs.end);
-        int length = static_cast<int>(ifs.tellg());
-        assert((length > 0) && (length % 4 == 0));  // Size of SPIR-V binary must be the multile of 32bit
-        ifs.seekg (0, ifs.beg);
+        bool ret = compile_glsl(spirv_filename, /* verbose */ true, glsl_filename);
+        if (!ret)
+        {
+            std::cerr << "Failed to compile GLSL to SPIR-V" << std::endl;
+            return;
+        }
 
-        buf.resize(static_cast<size_t>(length / 4));
+        ret = compile_spirv(cpp_filename, /* verbose */ true, spirv_filename);
+        if (!ret)
+        {
+            std::cerr << "Failed to compile SPIR-V to C++" << std::endl;
+            return;
+        }
 
-        ifs.read(reinterpret_cast<char*>(buf.data()), length);
-      }
+        {
+            std::vector<uint32_t> buf;
+            {
+                std::ifstream ifs(spirv_filename);
+                if (!ifs)
+                {
+                    std::cerr << "Failed to read SPIR-V file : " << spirv_filename << std::endl;
+                    return;
+                }
 
-      // Initialize GLSL context of SPIRV-Cross
-      prog.glsl = new spirv_cross::CompilerGLSL(std::move(buf));
-      assert(prog.glsl);
+                ifs.seekg(0, ifs.end);
+                int length = static_cast<int>(ifs.tellg());
+                assert((length > 0) && (length % 4 == 0)); // Size of SPIR-V binary must be the multile of 32bit
+                ifs.seekg(0, ifs.beg);
+
+                buf.resize(static_cast<size_t>(length / 4));
+
+                ifs.read(reinterpret_cast<char *>(buf.data()), length);
+            }
+
+            // Initialize GLSL context of SPIRV-Cross
+            prog.glsl = new spirv_cross::CompilerGLSL(std::move(buf));
+            assert(prog.glsl);
+        }
     }
-
-
-  } else if (shader.binary.size() > 0) {
-    // Assume SPIR-V binary
-
+    else if (shader.binary.size() > 0)
     {
-      std::ofstream ofs(spirv_filename);
-      if (!ofs) {
-        std::cerr << "Failed to write SPIR-V binary to [" << spirv_filename << "]" << std::endl;
+        // Assume SPIR-V binary
+
+        {
+            std::ofstream ofs(spirv_filename);
+            if (!ofs)
+            {
+                std::cerr << "Failed to write SPIR-V binary to [" << spirv_filename << "]" << std::endl;
+                return;
+            }
+
+            ofs.write(reinterpret_cast<const char *>(shader.binary.data()),
+                      static_cast<ssize_t>(shader.binary.size() * sizeof(uint32_t)));
+            ofs.close();
+        }
+
+        bool ret = compile_spirv(cpp_filename, /* verbose */ true, spirv_filename);
+        if (!ret)
+        {
+            std::cerr << "Failed to translate SPIR-V to C++" << std::endl;
+            return;
+        }
+
+        // Initialize GLSL context of SPIRV-Cross
+        prog.glsl = new spirv_cross::CompilerGLSL(shader.binary);
+        assert(prog.glsl);
+    }
+    else
+    {
+        assert(0);
+    }
+
+    std::string compile_options; // FIXME(syoyo): Supply compiler options
+
+    // c++ -> dll
+    bool ret = compile_cpp(dll_filename, compile_options, /* verbose */ true, cpp_filename);
+    if (!ret)
+    {
+        std::cerr << "Failed to compile C++ into dll module." << std::endl;
         return;
-      }
-
-      ofs.write(reinterpret_cast<const char*>(shader.binary.data()), static_cast<ssize_t>(shader.binary.size() * sizeof(uint32_t)));
-      ofs.close();
     }
 
-    bool ret = compile_spirv(cpp_filename, /* verbose */true, spirv_filename);
-    if (!ret) {
-      std::cerr << "Failed to translate SPIR-V to C++" << std::endl;
-      return;
-    }
+    prog.instance = nullptr; // FIXME(LTE)
+    //softcompute::ShaderInstance *instance = nullptr;
+    //      engine.Compile("comp", /* id */ 0, paths, compiler_options, source_filename);
 
-    // Initialize GLSL context of SPIRV-Cross
-    prog.glsl = new spirv_cross::CompilerGLSL(shader.binary);
-    assert(prog.glsl);
+    spirv_cross_get_interface_fn interface =
+        reinterpret_cast<spirv_cross_get_interface_fn>(prog.instance->GetInterface());
 
-  } else {
-    assert(0);
-  }
+    prog.shader = interface()->construct();
 
-  std::string compile_options; // FIXME(syoyo): Supply compiler options
-
-  // c++ -> dll
-  bool ret = compile_cpp(dll_filename, compile_options, /* verbose */true, cpp_filename);
-  if (!ret) {
-    std::cerr << "Failed to compile C++ into dll module." << std::endl;
-    return;
-  }
-
-  prog.instance = nullptr; // FIXME(LTE)
-  //softcompute::ShaderInstance *instance = nullptr;
-  //      engine.Compile("comp", /* id */ 0, paths, compiler_options, source_filename);
-
-  spirv_cross_get_interface_fn interface = reinterpret_cast<spirv_cross_get_interface_fn>(prog.instance->GetInterface());
-  
-  prog.shader = interface()->construct();
-
-  prog.linked = true;
+    prog.linked = true;
 }
-
 
 void glBindBuffer(GLenum target, GLuint buffer)
 {
@@ -831,142 +861,141 @@ void glBufferData(GLenum target, GLsizeiptr size, const GLvoid *data, GLenum usa
 
 void glUseProgram(GLuint program)
 {
-  InitializeGLContext();
-  gCtx->active_program = program;
+    InitializeGLContext();
+    gCtx->active_program = program;
 }
 
-void glShaderBinary(  GLsizei n,
-  const GLuint *shaders,
-  GLenum binaryformat,
-  const void *binary,
-  GLsizei length)
+void glShaderBinary(GLsizei n, const GLuint *shaders, GLenum binaryformat, const void *binary, GLsizei length)
 {
-  InitializeGLContext();
+    InitializeGLContext();
 
-  // TODO(LTE): Support multiple shaders.
-  assert(n == 1);
-  assert(shaders);
-  assert(binary);
-  assert(length > 0);
-  assert(length % 4 == 0);  // Size of SPIR-V binary must be the multiple of 32bit
-  assert(binaryformat == GL_SHADER_BINARY_FORMAT_SPIR_V_ARB);
-  
-  size_t idx = shaders[0];
-  if (gCtx->shaders[idx].deleted) {
-    std::cerr << "[SoftGL] shader " << idx << " is not initialized." << std::endl;
-    return;
-  }
+    // TODO(LTE): Support multiple shaders.
+    assert(n == 1);
+    assert(shaders);
+    assert(binary);
+    assert(length > 0);
+    assert(length % 4 == 0); // Size of SPIR-V binary must be the multiple of 32bit
+    assert(binaryformat == GL_SHADER_BINARY_FORMAT_SPIR_V_ARB);
 
-  gCtx->shaders[idx].binary.resize(static_cast<size_t>(length/4));
-  memcpy(gCtx->shaders[idx].binary.data(), binary, static_cast<size_t>(length));
+    size_t idx = shaders[0];
+    if (gCtx->shaders[idx].deleted)
+    {
+        std::cerr << "[SoftGL] shader " << idx << " is not initialized." << std::endl;
+        return;
+    }
+
+    gCtx->shaders[idx].binary.resize(static_cast<size_t>(length / 4));
+    memcpy(gCtx->shaders[idx].binary.data(), binary, static_cast<size_t>(length));
 }
 
-void glShaderSource(  GLuint shader,
-  GLsizei count,
-  const GLchar * const *string,
-  const GLint *length)
+void glShaderSource(GLuint shader, GLsizei count, const GLchar *const *string, const GLint *length)
 {
-  assert(count > 0);
-  assert(string);
-  assert(length);
+    assert(count > 0);
+    assert(string);
+    assert(length);
 
-  size_t idx = shader;
-  if (gCtx->shaders[idx].deleted) {
-    std::cerr << "[SoftGL] shader " << idx << " is not initialized." << std::endl;
-    return;
-  }
+    size_t idx = shader;
+    if (gCtx->shaders[idx].deleted)
+    {
+        std::cerr << "[SoftGL] shader " << idx << " is not initialized." << std::endl;
+        return;
+    }
 
-  gCtx->shaders[idx].source.clear();
-  
-  // Concat
-  for (size_t i = 0; i < static_cast<size_t>(count); i++) {
-    gCtx->shaders[idx].source += std::string(string[i], static_cast<size_t>(length[i]));
-  }
+    gCtx->shaders[idx].source.clear();
 
+    // Concat
+    for (size_t i = 0; i < static_cast<size_t>(count); i++)
+    {
+        gCtx->shaders[idx].source += std::string(string[i], static_cast<size_t>(length[i]));
+    }
 }
 
-GLint glGetUniformLocation( GLuint program,
-  const GLchar *name)
+GLint glGetUniformLocation(GLuint program, const GLchar *name)
 {
-  InitializeGLContext();
-  (void)program;
-  (void)name;
+    InitializeGLContext();
+    (void)program;
+    (void)name;
 
-  ABORT_F("TODO");
-  //if (gCtx->glsl_program_map.find(program) == gCtx->glsl_program_map.end()) {
-  //  return -1;
-  //}
-  //return -1;
+    ABORT_F("TODO");
+    //if (gCtx->glsl_program_map.find(program) == gCtx->glsl_program_map.end()) {
+    //  return -1;
+    //}
+    //return -1;
 }
 
 void glAttachShader(GLuint program, GLuint shader)
 {
-  InitializeGLContext();
+    InitializeGLContext();
 
-  if (program == 0) return;
-  if (shader == 0) return;
+    if (program == 0)
+        return;
+    if (shader == 0)
+        return;
 
-  assert(program < gCtx->programs.size());
+    assert(program < gCtx->programs.size());
 
-  gCtx->programs[program].shaders.push_back(shader);
+    gCtx->programs[program].shaders.push_back(shader);
 }
 
 void glDeleteProgram(GLuint program)
 {
-  InitializeGLContext();
+    InitializeGLContext();
 
-  if (program == 0) return;
+    if (program == 0)
+        return;
 
-  assert(program < gCtx->programs.size());
+    assert(program < gCtx->programs.size());
 
-  gCtx->programs[program].deleted = true;
+    gCtx->programs[program].deleted = true;
 
-  softcompute::ShaderInstance *instance = gCtx->programs[program].instance;
-  assert(instance);
+    softcompute::ShaderInstance *instance = gCtx->programs[program].instance;
+    assert(instance);
 
-  spirv_cross_get_interface_fn interface = reinterpret_cast<spirv_cross_get_interface_fn>(instance->GetInterface());
+    spirv_cross_get_interface_fn interface = reinterpret_cast<spirv_cross_get_interface_fn>(instance->GetInterface());
 
-  assert(gCtx->programs[program].shader);
-  interface()->destruct(gCtx->programs[program].shader);
-  
-  gCtx->programs[program].deleted = true;
-  
+    assert(gCtx->programs[program].shader);
+    interface()->destruct(gCtx->programs[program].shader);
+
+    gCtx->programs[program].deleted = true;
 }
 
 void glDispatchCompute(GLuint num_groups_x, GLuint num_groups_y, GLuint num_groups_z)
 {
-  assert(num_groups_z == 1); // TODO(LTE): Support 3D dispatch
+    InitializeGLContext();
 
-  glm::uvec3 num_workgroups(num_groups_x, num_groups_y, 1);
-  glm::uvec3 work_group_id(0, 0, 0);
+    CHECK_F(num_groups_z == 1, "num_group_z must be 1 for a while");
 
-  if (gCtx->active_program == 0) return;
+    glm::uvec3 num_workgroups(num_groups_x, num_groups_y, 1);
+    glm::uvec3 work_group_id(0, 0, 0);
 
-  spirv_cross_shader_t *shader = gCtx->programs[gCtx->active_program].shader;
-  spirv_cross_get_interface_fn interface = reinterpret_cast<spirv_cross_get_interface_fn>(gCtx->programs[gCtx->active_program].instance->GetInterface());
+    if (gCtx->active_program == 0)
+        return;
 
-  spirv_cross_set_builtin(shader, SPIRV_CROSS_BUILTIN_NUM_WORK_GROUPS, &num_workgroups, sizeof(num_workgroups));
-  spirv_cross_set_builtin(shader, SPIRV_CROSS_BUILTIN_WORK_GROUP_ID, &work_group_id, sizeof(work_group_id));
+    spirv_cross_shader_t *shader = gCtx->programs[gCtx->active_program].shader;
+    spirv_cross_get_interface_fn interface =
+        reinterpret_cast<spirv_cross_get_interface_fn>(gCtx->programs[gCtx->active_program].instance->GetInterface());
 
-  {
-      auto t_begin = std::chrono::high_resolution_clock::now();
-      // Execute work groups
-      for (uint32_t y = 0; y < num_groups_y; y++)
-      {
-          for (uint32_t x = 0; x < num_groups_x; x++)
-          {
-              work_group_id.x = x;
-              work_group_id.y = y;
+    spirv_cross_set_builtin(shader, SPIRV_CROSS_BUILTIN_NUM_WORK_GROUPS, &num_workgroups, sizeof(num_workgroups));
+    spirv_cross_set_builtin(shader, SPIRV_CROSS_BUILTIN_WORK_GROUP_ID, &work_group_id, sizeof(work_group_id));
 
-              interface()->invoke(shader);
-          }
-      }
-      auto t_end = std::chrono::high_resolution_clock::now();
+    {
+        auto t_begin = std::chrono::high_resolution_clock::now();
+        // Execute work groups
+        for (uint32_t y = 0; y < num_groups_y; y++)
+        {
+            for (uint32_t x = 0; x < num_groups_x; x++)
+            {
+                work_group_id.x = x;
+                work_group_id.y = y;
 
-      std::chrono::duration<double, std::milli> exec_ms = t_end - t_begin;
-      std::cout << "execute time: " << exec_ms.count() << " ms" << std::endl;
-  }
+                interface()->invoke(shader);
+            }
+        }
+        auto t_end = std::chrono::high_resolution_clock::now();
 
+        std::chrono::duration<double, std::milli> exec_ms = t_end - t_begin;
+        std::cout << "execute time: " << exec_ms.count() << " ms" << std::endl;
+    }
 }
 
 } // namespace softgl

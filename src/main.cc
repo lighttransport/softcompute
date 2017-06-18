@@ -26,6 +26,15 @@
 #pragma clang diagnostic ignored "-Wmissing-prototypes"
 #pragma clang diagnostic ignored "-Wdeprecated"
 #pragma clang diagnostic ignored "-Wweak-vtables"
+#ifdef __APPLE__
+#if __clang_major__ >= 8 && __clang_minor__ >= 1
+#pragma clang diagnostic ignored "-Wcomma"
+#endif
+#else  // __APPLE__
+#if (__clang_major__ >= 4) || (__clang_major__ >= 3 && __clang_minor__ > 8)
+#pragma clang diagnostic ignored "-Wcomma"
+#endif
+#endif  // __APPLE__
 #endif
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
@@ -519,6 +528,10 @@ int main(int argc, char **argv)
     std::string compiler_options = options["options"];
 
     std::string filename = args[0];
+
+    softgl::InitSoftGL();
+
+    softgl::ReleaseSoftGL();
 
     return EXIT_SUCCESS;
 }
