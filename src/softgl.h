@@ -105,9 +105,12 @@ void glShaderBinary(  GLsizei n,
   GLenum binaryformat,
   const void *binary,
   GLsizei length);
+void glGetShaderInfoLog(GLuint shader, GLsizei maxLength, GLsizei *length, GLchar *infoLog);
 
 void glLinkProgram(GLuint program);
 void glDeleteProgram(GLuint program);
+void glGetProgramiv(GLuint program, GLenum pname, GLint *params);
+void glGetPrograminfoLog(GLuint program, GLsizei maxLength, GLsizei *length, GLchar *infoLog);
 
 void InitSoftGL();
 void ReleaseSoftGL();

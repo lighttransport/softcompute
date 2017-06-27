@@ -937,6 +937,17 @@ void glAttachShader(GLuint program, GLuint shader)
     gCtx->programs[program].shaders.push_back(shader);
 }
 
+void glGetShaderInfoLog(GLuint shader, GLsizei maxLength, GLsizei *length, GLchar *infoLog) {
+  (void)shader;
+  (void)maxLength;
+  (void)length;
+  (void)infoLog;
+
+  LOG_F(ERROR, "Implement"); 
+
+  return;
+}
+
 void glDeleteProgram(GLuint program)
 {
     InitializeGLContext();
