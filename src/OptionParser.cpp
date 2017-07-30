@@ -4,6 +4,15 @@
  * URL: https://github.com/weisslj/cpp-optparse
  */
 
+#ifdef __clang__
+#pragma clang diagnostic ignored "-Wold-style-cast"
+#pragma clang diagnostic ignored "-Wmissing-noreturn"
+#pragma clang diagnostic ignored "-Wweak-vtables"
+#pragma clang diagnostic ignored "-Wexit-time-destructors"
+#pragma clang diagnostic ignored "-Wpadded"
+#pragma clang diagnostic ignored "-Wdeprecated"
+#endif
+
 #include "OptionParser.h"
 
 #include <cstdlib>

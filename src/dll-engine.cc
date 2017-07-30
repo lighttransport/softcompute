@@ -36,12 +36,12 @@ static std::string GetFileExtension(const std::string &FileName)
 }
 
 #ifdef _WIN32
-std::wstring s2ws(const std::string& s)
+std::wstring s2ws(const std::string &s)
 {
     int len;
     int slength = (int)s.length() + 1;
-    len = MultiByteToWideChar(CP_ACP, 0, s.c_str(), slength, 0, 0); 
-    wchar_t* buf = new wchar_t[len];
+    len = MultiByteToWideChar(CP_ACP, 0, s.c_str(), slength, 0, 0);
+    wchar_t *buf = new wchar_t[len];
     MultiByteToWideChar(CP_ACP, 0, s.c_str(), slength, buf, len);
     std::wstring r(buf);
     delete[] buf;
@@ -118,6 +118,9 @@ ShaderInstance::Impl::~Impl()
 bool ShaderInstance::Impl::Compile(const std::string &type, const std::vector<std::string> &paths,
                                    const std::string &filename)
 {
+    (void)type;
+    (void)paths;
+
     std::string ext = GetFileExtension(filename);
 
     std::string abspath = filename; // @fixme
@@ -128,10 +131,9 @@ bool ShaderInstance::Impl::Compile(const std::string &type, const std::vector<st
     }
 
     void *handle = nullptr;
-    void *entry_fn = nullptr;
 
 #ifdef _WIN32
-	std::wstring s = s2ws(filename);
+    std::wstring s = s2ws(filename);
     HMODULE module = LoadLibrary(TEXT("./tmp.dll"));
     if (module == nullptr)
     {
@@ -262,6 +264,8 @@ private:
 ShaderInstance *ShaderEngine::Impl::Compile(const std::string &type, unsigned int shaderID,
                                             const std::vector<std::string> &paths, const std::string &filename)
 {
+    (void)shaderID;
+
     ShaderInstance *shaderInstance = new ShaderInstance();
     bool ret = shaderInstance->Compile(type, paths, filename);
     if (!ret)
@@ -294,11 +298,14 @@ ShaderEngine::~ShaderEngine()
 }
 
 ShaderInstance *ShaderEngine::Compile(const std::string &type, unsigned int shaderID,
-                                      const std::vector<std::string> &paths, const std::string &filename)
+                                      const std::vector<std::string> &paths, const std::string &options,
+                                      const std::string &filename)
 {
 
+    (void)options;
+
     assert(impl);
-    assert(shaderID != (unsigned int)(-1));
+    assert(shaderID != static_cast<unsigned int>(-1));
 
     if (shaderInstanceMap_.find(shaderID) != shaderInstanceMap_.end())
     {

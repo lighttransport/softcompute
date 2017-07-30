@@ -16,11 +16,18 @@
 ## Requirements
 
 * Premake5 https://premake.github.io/download.html
-* Recent C++11 ready clang or gcc compiler
+* Recent C++11 compiler(e.g. clang or gcc)
+
+### Optional
+
 * glslang https://github.com/KhronosGroup/glslang
-* SPIR-Cross https://github.com/KhronosGroup/SPIRV-Cross
-* glm 0.9.7.4 or later http://glm.g-truc.net/
-* MinGW(on Windows)
+
+### Windows
+
+* MinGW
+
+Note that Compilation using Visual Sutdio(MSC) is not fully supported yet.
+
 
 ### Optional
 
@@ -30,18 +37,13 @@
 
 ## Setup
 
-Put `glm` directory to this directory(or create a symlink).
+    $ git submodule update --init
 
-    $ ls
-    glm
-    spirv_cross
-    bin
-    src
-    ... 
+`glm` and `SPIRV-Cross` will be added as a submodule.
 
 ## Build on Linux or MacOSX
 
-    $ premake5 --spirv-cross=/path/to/SPIRV-Cross gmake
+    $ premake5 gmake
     $ make
 
 ### JIT version
@@ -72,7 +74,12 @@ Create cpp shader from GLSL using `glslangValidator` and `spirv-cross`
 
 Then,
 
-    $ ./bin/softcompute ao.cc
+    $ ./bin/softcompute <options> ao.cc
+
+### Options
+
+    -o "STRING"     : Specify custom C++ compiler options. e.g. -o "-O2"
+    -v              : Verbose mode
 
 ### DLL version
 
@@ -127,9 +134,15 @@ Only support simple compute shader at this time.
 * [ ] Flexible shader value binding.
 * [ ] Debugger support.
 * [ ] GUI?
+<<<<<<< HEAD
 * [ ] Windows JIT support.
+=======
+* [ ] OpenGL like API(e.g. `glDispatchCompute`)
+* [ ] Windows support.
+  * [ ] Visual Studio + clang/LLVM JIT
+  * [x] MinGW + DLL approach
+>>>>>>> 7d2f548ec30e1aafae297192d96c5ef7d73b3d60
 * [ ] Interactive edit & run.
   * [ ] Watch file changes.
-* [ ] Multi-threaded execution.
 * [ ] gitsubmodule `glm`
 

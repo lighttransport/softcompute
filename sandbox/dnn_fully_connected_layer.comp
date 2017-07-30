@@ -1,0 +1,39 @@
+#version 310 es
+
+// Simple fully connected layer
+
+layout(local_size_x = 1) in;
+
+layout(std430, binding = 0) readonly buffer ssbo_in_data
+{
+    float in_data[];
+};
+
+layout(std430, binding = 1) writeonly buffer ssbo_out_data
+{
+    float out_data[];
+};
+
+layout(std430, binding = 2) readonly buffer ssbo_weight
+{
+    float in_W[];
+};
+
+layout(std430, binding = 3) readonly buffer ssbo_param
+{
+    float in_b;
+    int   in_size;
+};
+
+void main()
+{
+    uint ident = gl_GlobalInvocationID.x;
+
+    float a = 0.0f;
+    for (int i = 0; i < in_size; i++) {
+        a += in_W[i] * in_data[i];
+    }
+
+    out_data[ident] = a + in_b;
+}
+

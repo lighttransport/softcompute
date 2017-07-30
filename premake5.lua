@@ -12,13 +12,6 @@ newoption {
    description = "Path to llvm-config."
 }
 
--- SPIRV-Cross path
-newoption {
-   trigger     = "spirv-cross",
-   value       = "PATH",
-   description = "Path to SPIRV-Cross."
-}
-
 -- Address-sanitizerr
 newoption {
    trigger     = "with-asan",
@@ -27,9 +20,14 @@ newoption {
 
 sources = {
    "src/main.cc"
+ , "src/softgl.cc"
  , "src/OptionParser.cpp"
+ , "src/loguru-impl.cc"
+ -- SPIRV-Cross
+ , "third_party/SPIRV-Cross/spirv_cross.cpp"
+ , "third_party/SPIRV-Cross/spirv_cfg.cpp"
+ , "third_party/SPIRV-Cross/spirv_glsl.cpp"
 }
-
 
 
 -- premake4.lua
@@ -40,6 +38,7 @@ workspace "SoftCompute"
    else
       platforms { "native", "x64", "x32" }
    end
+
 
 -- A project defines one build target
 project "SoftCompute"
@@ -53,7 +52,7 @@ project "SoftCompute"
    }
 
    if _OPTIONS['enable-jit'] then
-      defines { 'ENABLE_JIT' }
+      defines { 'SOFTCOMPUTE_ENABLE_JIT' }
       files { 'src/jit-engine.cc' }
    else
       files { 'src/dll-engine.cc' }
@@ -64,21 +63,28 @@ project "SoftCompute"
       llvm_config = _OPTIONS['llvm-config']
    end
 
-   spirv_cross_path = "../SPIRV-Cross/"
-   if _OPTIONS['spirv_cross'] then
-      spirv_cross_path = _OPTIONS['spirv_cross']
-   end
+   -- SPIRV-Cross
+   spirv_cross_path = "./third_party/SPIRV-Cross/" -- path to SPIRV-Cross(submodule)
 
    includedirs { spirv_cross_path }
    includedirs { spirv_cross_path .. '/include' }
 
+   -- Loguru
+   includedirs { "./third_party/" }
+
+   flags { "c++11" }
+
+   -- Disable exception(for SPIRV-Cross code)
+   defines { "SPIRV_CROSS_EXCEPTIONS_TO_ASSERTIONS=1" }
+
    -- MacOSX. Guess we use gcc.
    configuration { "macosx" }
 
-      buildoptions { '-std=c++11' }
+      -- Assume clang
+      buildoptions { "-Weverything -Werror -Wno-padded -Wno-c++98-compat -Wno-c++98-compat-pedantic" } 
 
-      -- glm
-      includedirs { '/usr/local/include' }
+      -- glm(submodule)
+      includedirs { './third_party/glm' }
 
       if _OPTIONS['enable-jit'] then
          -- includedirs { "`" .. llvm_config .. " --includedir`" }
@@ -143,9 +149,11 @@ project "SoftCompute"
    configuration {"linux"}
       defines { '__STDC_CONSTANT_MACROS', '__STDC_LIMIT_MACROS' } -- c99
 
-      buildoptions { '-std=c++11' }
       buildoptions { "-pthread" }
       --buildoptions { '-stdlib=libc++' }
+
+      -- glm(submodule)
+      includedirs { './third_party/glm' }
 
       if _OPTIONS['with-asan'] then
          buildoptions { "-fsanitizer=address -fno-omit-frame-pointer" }
@@ -174,6 +182,7 @@ project "SoftCompute"
 
 
    configuration "Debug"
+
       defines { "DEBUG" } -- -DDEBUG
       flags { "Symbols" }
       targetdir "bin"

@@ -1,0 +1,15 @@
+[submodule "glm"]
+	path = third_party/glm
+	url = https://github.com/g-truc/glm.git
+[submodule "SPIRV-Cross"]
+	path = third_party/SPIRV-Cross
+	url = https://github.com/syoyo/SPIRV-Cross.git
+[submodule "third_party/loguru"]
+	path = third_party/loguru
+	url = https://github.com/emilk/loguru.git
+[submodule "third_party/glslang"]
+	path = third_party/glslang
+	url = https://github.com/KhronosGroup/glslang
+[submodule "third_party/ChaiScript"]
+	path = third_party/ChaiScript
+	url = https://github.com/ChaiScript/ChaiScript.git

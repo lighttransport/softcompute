@@ -1,0 +1,20 @@
+#version 310 es
+layout(local_size_x = 1) in;
+
+layout(std430, binding = 0) readonly buffer ssbo_in_data
+{
+    float in_data[];
+};
+
+layout(std430, binding = 1) writeonly buffer ssbo_out_data
+{
+    float out_data[];
+};
+
+void main()
+{
+    uint ident = gl_GlobalInvocationID.x;
+    float f = tanh(in_data[ident]);
+    out_data[ident] = f;
+}
+
