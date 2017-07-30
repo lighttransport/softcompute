@@ -184,13 +184,14 @@ project "SoftCompute"
    configuration "Debug"
 
       defines { "DEBUG" } -- -DDEBUG
-      flags { "Symbols" }
+      symbols "On"
       targetdir "bin"
       targetname "softcompute_debug"
 
    configuration "Release"
       -- defines { "NDEBUG" } -- -NDEBUG
-      flags { "Symbols", "Optimize" }
+      symbols "On"
+      optimize "On"
       targetdir "bin"
 
       targetname "softcompute"
