@@ -48,6 +48,8 @@
 
 #include "softgl.h"
 
+using namespace softgl;
+
 #if 0
 
 extern spirv_cross_shader_t *spirv_cross_construct(void);
@@ -501,6 +503,74 @@ int main(int argc, char **argv)
 }
 #endif
 
+bool
+LoadShader(
+  GLenum shaderType,  // GL_VERTEX_SHADER or GL_FRAGMENT_SHADER(or maybe GL_COMPUTE_SHADER)
+  GLuint& shader,
+  const char* shaderSourceFilename)
+{
+  GLint val = 0;
+
+  // free old shader/program
+  if (shader != 0) glDeleteShader(shader);
+
+  static GLchar srcbuf[16384];
+  FILE *fp = fopen(shaderSourceFilename, "rb");
+  if (!fp) {
+    fprintf(stderr, "failed to load shader: %s\n", shaderSourceFilename);
+    return false;
+  }
+  fseek(fp, 0, SEEK_END);
+  size_t len = ftell(fp);
+  rewind(fp);
+  len = fread(srcbuf, 1, len, fp);
+  srcbuf[len] = 0;
+  fclose(fp);
+
+  static const GLchar *src = srcbuf;
+
+  shader = glCreateShader(shaderType);
+  glShaderSource(shader, 1, &src, NULL);
+  glCompileShader(shader);
+  glGetShaderiv(shader, GL_COMPILE_STATUS, &val);
+  if (val != GL_TRUE) {
+    char log[4096];
+    GLsizei msglen;
+    glGetShaderInfoLog(shader, 4096, &msglen, log);
+    printf("%s\n", log);
+    assert(val == GL_TRUE && "failed to compile shader");
+  }
+
+  printf("Load shader [ %s ] OK\n", shaderSourceFilename);
+  return true;
+}
+
+bool
+LinkShader(
+  GLuint& prog,
+  GLuint& vertShader,
+  GLuint& fragShader)
+{
+  GLint val = 0;
+  
+  if (prog != 0) {
+    glDeleteProgram(prog);
+  }
+
+  prog = glCreateProgram();
+
+  glAttachShader(prog, vertShader);
+  glAttachShader(prog, fragShader);
+  glLinkProgram(prog);
+
+  glGetProgramiv(prog, GL_LINK_STATUS, &val);
+  assert(val == GL_TRUE && "failed to link shader");
+
+  printf("Link shader OK\n");
+
+  return true;
+}
+
 int main(int argc, char **argv)
 {
     using optparse::OptionParser;
@@ -530,6 +600,12 @@ int main(int argc, char **argv)
     std::string filename = args[0];
 
     softgl::InitSoftGL();
+
+    // HACK
+    {
+      GLuint prog = glCreateProgram();
+      //GLint idx = softgl::glGetUniformLocation(prog, "bora");
+    }
 
     softgl::ReleaseSoftGL();
 

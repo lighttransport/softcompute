@@ -9,6 +9,9 @@
 namespace softgl
 {
 
+const int GL_FALSE = 0;
+const int GL_TRUE = 1;
+
 typedef uint8_t GLboolean;
 typedef uint32_t GLenum;
 typedef int32_t GLint;
@@ -28,6 +31,8 @@ typedef ptrdiff_t GLintptr;
 typedef ptrdiff_t GLsizeiptr;
 
 const int GL_COMPUTE_SHADER = 0x91B9;
+const int GL_COMPILE_STATUS = 0x8B81;
+const int GL_LINK_STATUS = 0x8B82;
 
 const int GL_BYTE = 0x1400;
 const int GL_UNSIGNED_BYTE = 0x1401;
@@ -105,7 +110,9 @@ void glShaderBinary(  GLsizei n,
   GLenum binaryformat,
   const void *binary,
   GLsizei length);
+void glDeleteShader(GLuint shader);
 void glGetShaderInfoLog(GLuint shader, GLsizei maxLength, GLsizei *length, GLchar *infoLog);
+void glGetShaderiv(GLuint shader, GLenum pname, GLint *params);
 
 void glLinkProgram(GLuint program);
 void glDeleteProgram(GLuint program);

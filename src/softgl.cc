@@ -123,6 +123,18 @@ struct Program
         instance = nullptr;
         shader = nullptr;
     }
+
+    bool FindUniformLocation(const char *name, int *idx) {
+      if (!glsl) {
+        return false;
+      }
+
+      const uint32_t num_ids = glsl->get_current_id_bound();
+      for (uint32_t i = 0; i < num_ids; i++) {
+        const std::string &name = glsl->get_name(i);
+        LOG_F(INFO, "name[%d] = %s", i, name);
+      }
+    }
 };
 
 struct Shader
@@ -794,29 +806,14 @@ void glBindBuffer(GLenum target, GLuint buffer)
     gCtx->active_buffer_index = buffer;
 }
 
-#if 0
 void glBindBufferBase(GLenum target, GLuint index, GLuint buffer)
 {
-    InitializeGLContext();
-    assert((target == GL_SHADER_STORAGE_BUFFER) || (target == GL_UNIFORM_BUFFER));
+  (void)target;
+  (void)index;
+  (void)buffer;
+  ABORT_F("TODO");
 
-    assert(index <= kMaxBuffers);
-
-    assert(buffer < gCtx->buffers.size());
-    assert(gCtx->buffers[buffer].deleted == false);
-
-    // TODO(LTE): Implement
-    assert(0);
-    if (target == GL_SHADER_STORAGE_BUFFER)
-    {
-    }
-    else if (target == GL_UNIFORM_BUFFER)
-    {
-    }
-
-  return;
 }
-#endif
 
 void glBindBufferRange(GLenum target, GLuint index, GLuint buffer, GLintptr offset, GLsizeiptr size)
 {
@@ -913,14 +910,22 @@ void glShaderSource(GLuint shader, GLsizei count, const GLchar *const *string, c
 GLint glGetUniformLocation(GLuint program, const GLchar *name)
 {
     InitializeGLContext();
-    (void)program;
     (void)name;
 
-    ABORT_F("TODO");
-    //if (gCtx->glsl_program_map.find(program) == gCtx->glsl_program_map.end()) {
-    //  return -1;
-    //}
-    //return -1;
+    if (program == 0) {
+        return -1;
+    }
+
+    const Program &prog = gCtx->programs[program];
+
+    if (prog.deleted)
+    {
+        LOG_F(ERROR, "Program {} is not created.", program);
+        return -1;
+    }
+
+    //ABORT_F("TODO");
+    return -1;
 }
 
 void glAttachShader(GLuint program, GLuint shader)
@@ -937,6 +942,27 @@ void glAttachShader(GLuint program, GLuint shader)
     gCtx->programs[program].shaders.push_back(shader);
 }
 
+void glGetShaderiv(GLuint shader, GLenum pname, GLint *params) {
+  (void)shader;
+  (void)pname;
+  (void)params;
+
+  ABORT_F("TODO"); 
+
+  return;
+}
+
+void glGetProgramiv(GLuint program, GLenum pname, GLint *params) {
+  (void)program;
+  (void)pname;
+  (void)params;
+
+  ABORT_F("TODO"); 
+
+  return;
+}
+
+
 void glGetShaderInfoLog(GLuint shader, GLsizei maxLength, GLsizei *length, GLchar *infoLog) {
   (void)shader;
   (void)maxLength;
@@ -946,6 +972,20 @@ void glGetShaderInfoLog(GLuint shader, GLsizei maxLength, GLsizei *length, GLcha
   LOG_F(ERROR, "Implement"); 
 
   return;
+}
+
+void glDeleteShader(GLuint shader)
+{
+    InitializeGLContext();
+
+    if (shader == 0)
+        return;
+
+    assert(shader < gCtx->shaders.size());
+
+    gCtx->shaders[shader].deleted = true;
+
+    // TODO(LTE): Free shader resource.
 }
 
 void glDeleteProgram(GLuint program)
@@ -1007,6 +1047,12 @@ void glDispatchCompute(GLuint num_groups_x, GLuint num_groups_y, GLuint num_grou
         std::chrono::duration<double, std::milli> exec_ms = t_end - t_begin;
         std::cout << "execute time: " << exec_ms.count() << " ms" << std::endl;
     }
+}
+
+void glCompileShader(GLuint shader)
+{
+  (void)shader;
+  ABORT_F("TODO");
 }
 
 } // namespace softgl
