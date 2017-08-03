@@ -63,6 +63,16 @@ const int GL_SHADER_STORAGE_BUFFER_OFFSET_ALIGNMENT = 0x90DF;
 
 const int GL_UNIFORM_BUFFER = 0x8A11;
 
+const int GL_SHADER_STORAGE_BLOCK = 0x92E6;
+
+const int GL_NO_ERROR = 0;
+const int GL_INVALID_ENUM = 0x0500;
+const int GL_INVALID_VALUE = 0x0501;
+const int GL_INVALID_OPERATION = 0x0502;
+const int GL_STACK_OVERFLOW = 0x0503;
+const int GL_STACK_UNDERFLOW = 0x0504;
+const int GL_OUT_OF_MEMORY = 0x0505;
+
 void glUniform1f(GLint location, GLfloat v0);
 
 void glUniform2f(GLint location, GLfloat v0, GLfloat v1);
@@ -113,6 +123,9 @@ void glShaderBinary(  GLsizei n,
 void glDeleteShader(GLuint shader);
 void glGetShaderInfoLog(GLuint shader, GLsizei maxLength, GLsizei *length, GLchar *infoLog);
 void glGetShaderiv(GLuint shader, GLenum pname, GLint *params);
+
+GLuint glGetProgramResourceIndex(GLuint program, GLenum programInterface, const char *name);
+void glShaderStorageBlockBinding(GLuint program, GLuint shaderBlockIndex, GLuint shaderBlockBinding);
 
 void glLinkProgram(GLuint program);
 void glDeleteProgram(GLuint program);

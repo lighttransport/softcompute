@@ -155,6 +155,7 @@ class SoftGLContext
 {
 public:
     SoftGLContext()
+			: error_(GL_NO_ERROR)
     {
         // 0th index is reserved.
         programs.resize(kMaxPrograms + 1);
@@ -173,6 +174,10 @@ public:
     {
     }
 
+		void SetGLError(const GLenum error) {
+			error_ = error;
+		}
+
     uint32_t active_buffer_index;
     uint32_t active_program;
 
@@ -182,6 +187,9 @@ public:
     std::vector<Buffer> buffers;
     std::vector<Program> programs;
     std::vector<Shader> shaders;
+
+ private:
+		GLenum error_;
 };
 
 static SoftGLContext *gCtx = nullptr;
@@ -474,6 +482,14 @@ static void InitializeGLContext()
     if (gCtx == nullptr)
     {
         InitSoftGL();
+    }
+}
+
+static void SetGLError(GLenum error) 
+{
+    if (gCtx)
+    {
+			gCtx->SetGLError(error);
     }
 }
 
@@ -1053,6 +1069,42 @@ void glCompileShader(GLuint shader)
 {
   (void)shader;
   ABORT_F("TODO");
+}
+
+GLuint glGetProgramResourceIndex(GLuint program, GLenum programInterface, const char *name) {
+
+    InitializeGLContext();
+
+    if (program == 0)
+			return 0;
+
+
+		if (programInterface == GL_SHADER_STORAGE_BLOCK) {
+			// OK
+		} else {
+			SetGLError(GL_INVALID_ENUM);	
+			return 0;
+		}
+    assert(program < gCtx->programs.size());
+
+    const Program &prog = gCtx->programs[program];
+
+		GLuint idx= 0;
+		const spirv_cross::ShaderResources resources = prog.glsl->get_shader_resources();
+
+		for (size_t i = 0; i < resources.storage_buffers.size(); i++) {
+			if (resources.storage_buffers[i].name.compare(name) == 0) {
+				// Got it
+				idx = i;
+			}
+		}
+
+		return idx;
+		
+}
+
+void glShaderStorageBlockBinding(GLuint program, GLuint shaderBlockIndex, GLuint storageBlockBinding) {
+
 }
 
 } // namespace softgl
