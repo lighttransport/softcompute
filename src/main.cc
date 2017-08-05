@@ -548,8 +548,7 @@ LoadShader(
 bool
 LinkShader(
   GLuint& prog,
-  GLuint& vertShader,
-  GLuint& fragShader)
+  GLuint& compShader)
 {
   GLint val = 0;
   
@@ -559,8 +558,7 @@ LinkShader(
 
   prog = glCreateProgram();
 
-  glAttachShader(prog, vertShader);
-  glAttachShader(prog, fragShader);
+  glAttachShader(prog, compShader);
   glLinkProgram(prog);
 
   glGetProgramiv(prog, GL_LINK_STATUS, &val);
@@ -603,8 +601,21 @@ int main(int argc, char **argv)
 
     // HACK
     {
-      GLuint prog = glCreateProgram();
-      //GLint idx = softgl::glGetUniformLocation(prog, "bora");
+      GLuint shader_id = glCreateShader(GL_COMPUTE_SHADER);
+      bool ret = LoadShader(GL_COMPUTE_SHADER, shader_id, filename.c_str());
+      if (!ret) {
+        std::cerr << "Failed to load shader : " << filename << std::endl;
+        return EXIT_FAILURE;
+      }
+
+      std::cout << "shader_id = " << shader_id << std::endl;
+        
+      GLuint prog = 0;
+      ret = LinkShader(prog, shader_id);
+      if (!ret) {
+        std::cerr << "Failed to link shader" << std::endl;
+        return EXIT_FAILURE;
+      }
     }
 
     softgl::ReleaseSoftGL();

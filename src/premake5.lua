@@ -1,12 +1,12 @@
 sources = {
-   "main.cc"
- , "softgl.cc"
+   "softgl.cc"
  , "OptionParser.cpp"
  , "loguru-impl.cc"
  -- SPIRV-Cross
  , "../third_party/SPIRV-Cross/spirv_cross.cpp"
  , "../third_party/SPIRV-Cross/spirv_cfg.cpp"
  , "../third_party/SPIRV-Cross/spirv_glsl.cpp"
+ , "../third_party/SPIRV-Cross/spirv_cpp.cpp"
 }
 
 
@@ -51,7 +51,9 @@ project "SoftCompute"
    configuration { "macosx" }
 
       -- Assume clang
-      buildoptions { "-Weverything -Werror -Wno-padded -Wno-c++98-compat -Wno-c++98-compat-pedantic" } 
+      if _OPTIONS["clang"] then
+         buildoptions { "-Weverything -Werror -Wno-padded -Wno-c++98-compat -Wno-c++98-compat-pedantic" } 
+      end
 
 
       if _OPTIONS['enable-jit'] then
@@ -120,6 +122,11 @@ project "SoftCompute"
       buildoptions { "-pthread" }
       --buildoptions { '-stdlib=libc++' }
 
+      -- Assume clang
+      if _OPTIONS["clang"] then
+         buildoptions { "-Weverything -Werror -Wno-padded -Wno-c++98-compat -Wno-c++98-compat-pedantic" } 
+      end
+
       if _OPTIONS['with-asan'] then
          buildoptions { "-fsanitizer=address -fno-omit-frame-pointer" }
          linkoptions { "-fsanitizer=address" }
@@ -144,3 +151,29 @@ project "SoftCompute"
 
       defines { '__STDC_CONSTANT_MACROS', '__STDC_LIMIT_MACROS' } -- c99
       buildoptions { '-std=c++11' }
+
+project "Console_SoftCompute"
+
+   if _OPTIONS["ios"] then
+   	kind "WindowedApp"
+   else	
+   	kind "ConsoleApp"
+   end
+   
+   
+   includedirs { "../src", "../third_party/Catch/include"}
+   
+   language "C++"
+   
+   flags { "c++11" }
+   
+   files {
+   	"main.cc",
+   }
+   
+   links { "SoftCompute" }
+
+   configuration { "linux" }
+      links { "dl", "pthread" }
+
+   configuration { "macosx" }

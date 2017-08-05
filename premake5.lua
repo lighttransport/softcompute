@@ -12,12 +12,21 @@ newoption {
    description = "Path to llvm-config."
 }
 
+-- clang
+newoption {
+   trigger     = "clang",
+   description = "Use clang."
+}
+
 -- Address-sanitizerr
 newoption {
    trigger     = "with-asan",
    description = "Use Address sanitizer(recent clang or gcc only)"
 }
 
+if _OPTIONS["clang"] then
+   toolset "clang"
+end
 
 workspace "SoftCompute"
    configurations { "Release", "Debug" }
