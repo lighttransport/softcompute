@@ -16,3 +16,6 @@
 [submodule "third_party/Catch"]
 	path = third_party/Catch
 	url = https://github.com/philsquared/Catch.git
+[submodule "third_party/fmt"]
+	path = third_party/fmt
+	url = https://github.com/fmtlib/fmt.git
