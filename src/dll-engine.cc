@@ -59,7 +59,7 @@ public:
     ~Impl();
 
     bool Compile(const std::string &type, const std::vector<std::string> &paths, const std::string &filename);
-    void *GetInterface();
+    void *GetInterfaceFuncPtr();
 
 private:
     void *entry_point_;
@@ -207,7 +207,7 @@ bool ShaderInstance::Impl::Compile(const std::string &type, const std::vector<st
     return true;
 }
 
-void *ShaderInstance::Impl::GetInterface()
+void *ShaderInstance::Impl::GetInterfaceFuncPtr()
 {
     assert(entry_point_);
     return entry_point_;
@@ -236,10 +236,10 @@ bool ShaderInstance::Compile(const std::string &type, const std::vector<std::str
     return impl->Compile(type, paths, filename);
 }
 
-void *ShaderInstance::GetInterface()
+void *ShaderInstance::GetInterfaceFuncPtr()
 {
     assert(impl);
-    return impl->GetInterface();
+    return impl->GetInterfaceFuncPtr();
 }
 
 //
@@ -255,7 +255,7 @@ public:
     ShaderInstance *Compile(const std::string &type, unsigned int shaderID, const std::vector<std::string> &paths,
                             const std::string &filename);
 
-    void *GetInterface();
+    void *GetInterfaceFuncPtr();
 
 private:
     bool abortOnFailure_;

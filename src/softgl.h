@@ -73,6 +73,8 @@ const int GL_STACK_OVERFLOW = 0x0503;
 const int GL_STACK_UNDERFLOW = 0x0504;
 const int GL_OUT_OF_MEMORY = 0x0505;
 
+const unsigned int GL_INVALID_INDEX = static_cast<unsigned int>(-1);
+
 void glUniform1f(GLint location, GLfloat v0);
 
 void glUniform2f(GLint location, GLfloat v0, GLfloat v1);
@@ -131,6 +133,7 @@ void glLinkProgram(GLuint program);
 void glDeleteProgram(GLuint program);
 void glGetProgramiv(GLuint program, GLenum pname, GLint *params);
 void glGetPrograminfoLog(GLuint program, GLsizei maxLength, GLsizei *length, GLchar *infoLog);
+GLuint glGetUniformBlockIndex(GLuint program, const GLchar *uniformBlockName);
 
 void InitSoftGL();
 void ReleaseSoftGL();

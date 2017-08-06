@@ -40,6 +40,8 @@
 #include "spirv_cross/internal_interface.hpp"
 #include "spirv_glsl.hpp"
 
+#define LOGURU_CATCH_SIGABRT 0
+#define LOGURU_USE_FMTLIB 1
 #include "loguru/loguru.hpp"
 
 #ifdef __clang__
@@ -111,7 +113,7 @@ struct Program
     bool linked;
     char buf[6];
 
-    spirv_cross::CompilerGLSL *glsl;
+    spirv_cross::CompilerCPP *cpp;
 
     softcompute::ShaderInstance *instance;
     spirv_cross_shader_t *shader;
@@ -120,19 +122,25 @@ struct Program
     {
         deleted = true;
         linked = false;
-        glsl = nullptr;
+        cpp = nullptr;
         instance = nullptr;
         shader = nullptr;
     }
 
+    ~Program()
+    {
+      delete instance;
+      delete shader;
+    }
+
     bool FindUniformLocation(const char *uniform_name, int *idx) {
-      if (!glsl) {
+      if (!cpp) {
         return false;
       }
 
-      const uint32_t num_ids = glsl->get_current_id_bound();
+      const uint32_t num_ids = cpp->get_current_id_bound();
       for (uint32_t i = 0; i < num_ids; i++) {
-        const std::string &name = glsl->get_name(i);
+        const std::string &name = cpp->get_name(i);
         LOG_F(INFO, "name[%d] = %s", i, name.c_str());
 
         if (name.compare(uniform_name) == 0) {
@@ -188,6 +196,18 @@ public:
 		void SetGLError(const GLenum error) {
 			error_ = error;
 		}
+
+    Program &GetProgram(uint32_t idx) {
+      if (idx == 0) {
+        ABORT_F("Program index is zero");
+      }
+
+      if (idx >= uint32_t(programs.size())) {
+        ABORT_F("Invalid Program index");
+      }
+      
+      return programs[idx];
+    }
 
     uint32_t active_buffer_index;
     uint32_t active_program;
@@ -450,8 +470,8 @@ static bool compile_cpp(const std::string &output_filename, const std::string &o
     std::stringstream ss;
     ss << cpp;
     ss << " -std=c++11";
-    ss << " -I./glm"; // TODO(syoyo): User-supplied path to glm
-    ss << " -I./SPIRV-Cross/include"; // TODO(syoyo): User-supplied path to SPIRV-Cross/include.
+    ss << " -I./third_party/glm"; // TODO(syoyo): User-supplied path to glm
+    ss << " -I./third_party/SPIRV-Cross/include"; // TODO(syoyo): User-supplied path to SPIRV-Cross/include.
     ss << " -o " << output_filename;
 #ifdef __APPLE__
     ss << " -flat_namespace";
@@ -747,8 +767,8 @@ void glLinkProgram(GLuint program)
 #endif
 
     {
-        // Save GLSL compiler context of SPIRV-Cross
-        prog.glsl = new spirv_cross::CompilerGLSL(shader.binary);
+        // Save CPP compiler context of SPIRV-Cross for later use.
+        prog.cpp = new spirv_cross::CompilerCPP(shader.binary);
     }
 
     {
@@ -773,13 +793,19 @@ void glLinkProgram(GLuint program)
     softcompute::ShaderEngine engine;
     std::vector<std::string> search_paths;
     std::string compile_options;
+
+    LOG_F(INFO, "load dll...");
     prog.instance = engine.Compile("comp", /* id */ 0, search_paths, compile_options, dll_filename);
 
-    spirv_cross_get_interface_fn interface =
-        reinterpret_cast<spirv_cross_get_interface_fn>(prog.instance->GetInterface());
+    LOG_F(INFO, "loaded dll...");
+    spirv_cross_get_interface_fn interface_fn = 
+        reinterpret_cast<spirv_cross_get_interface_fn>(prog.instance->GetInterfaceFuncPtr());
 
-    prog.shader = interface()->construct();
+    struct spirv_cross_interface *interface = interface_fn();
+    fprintf(stderr, "construct: %p\n", interface->construct());
+    prog.shader = interface->construct();
 
+    LOG_F(INFO, "linked...");
     prog.linked = true;
 }
 
@@ -1028,10 +1054,10 @@ void glDeleteProgram(GLuint program)
     softcompute::ShaderInstance *instance = gCtx->programs[program].instance;
     assert(instance);
 
-    spirv_cross_get_interface_fn interface = reinterpret_cast<spirv_cross_get_interface_fn>(instance->GetInterface());
+    spirv_cross_get_interface_fn interface_fun = reinterpret_cast<spirv_cross_get_interface_fn>(instance->GetInterfaceFuncPtr());
 
     assert(gCtx->programs[program].shader);
-    interface()->destruct(gCtx->programs[program].shader);
+    interface_fun()->destruct(gCtx->programs[program].shader);
 
     gCtx->programs[program].deleted = true;
 }
@@ -1049,8 +1075,8 @@ void glDispatchCompute(GLuint num_groups_x, GLuint num_groups_y, GLuint num_grou
         return;
 
     spirv_cross_shader_t *shader = gCtx->programs[gCtx->active_program].shader;
-    spirv_cross_get_interface_fn interface =
-        reinterpret_cast<spirv_cross_get_interface_fn>(gCtx->programs[gCtx->active_program].instance->GetInterface());
+    spirv_cross_get_interface_fn interface_fun =
+        reinterpret_cast<spirv_cross_get_interface_fn>(gCtx->programs[gCtx->active_program].instance->GetInterfaceFuncPtr());
 
     spirv_cross_set_builtin(shader, SPIRV_CROSS_BUILTIN_NUM_WORK_GROUPS, &num_workgroups, sizeof(num_workgroups));
     spirv_cross_set_builtin(shader, SPIRV_CROSS_BUILTIN_WORK_GROUP_ID, &work_group_id, sizeof(work_group_id));
@@ -1065,7 +1091,7 @@ void glDispatchCompute(GLuint num_groups_x, GLuint num_groups_y, GLuint num_grou
                 work_group_id.x = x;
                 work_group_id.y = y;
 
-                interface()->invoke(shader);
+                interface_fun()->invoke(shader);
             }
         }
         auto t_end = std::chrono::high_resolution_clock::now();
@@ -1174,7 +1200,7 @@ GLuint glGetProgramResourceIndex(GLuint program, GLenum programInterface, const 
     const Program &prog = gCtx->programs[program];
 
 		GLuint idx= 0;
-		const spirv_cross::ShaderResources resources = prog.glsl->get_shader_resources();
+		const spirv_cross::ShaderResources resources = prog.cpp->get_shader_resources();
 
 		for (size_t i = 0; i < resources.storage_buffers.size(); i++) {
 			if (resources.storage_buffers[i].name.compare(name) == 0) {
@@ -1192,6 +1218,29 @@ void glShaderStorageBlockBinding(GLuint program, GLuint shaderBlockIndex, GLuint
   (void)shaderBlockIndex;
   (void)storageBlockBinding;
   LOG_F(ERROR, "TODO");
+}
+
+GLuint glGetUniformBlockIndex(GLuint program, const GLchar *uniformBlockName)
+{
+  InitializeGLContext();
+
+  if (program == 0) {
+    return GL_INVALID_INDEX;
+  }
+
+  Program &prog = gCtx->GetProgram(program);
+
+  const spirv_cross::ShaderResources resources = prog.cpp->get_shader_resources();
+
+  GLuint idx = GL_INVALID_INDEX;
+	for (size_t i = 0; i < resources.storage_buffers.size(); i++) {
+		if (resources.storage_buffers[i].name.compare(uniformBlockName) == 0) {
+			// Got it
+			idx = static_cast<GLuint>(i);
+		}
+	}
+  
+  return idx;
 }
 
 } // namespace softgl

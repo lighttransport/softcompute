@@ -31,7 +31,8 @@ public:
     // type must be "comp" at this time.
     bool Compile(const std::string &type, const std::vector<std::string> &paths, const std::string &filename);
 
-    void *GetInterface();
+    // Get the pointer of the shader interface function.
+    void *GetInterfaceFuncPtr();
 
 private:
     class Impl;

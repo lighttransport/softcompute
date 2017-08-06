@@ -20,7 +20,7 @@ newoption {
 
 -- Address-sanitizerr
 newoption {
-   trigger     = "with-asan",
+   trigger     = "asan",
    description = "Use Address sanitizer(recent clang or gcc only)"
 }
 

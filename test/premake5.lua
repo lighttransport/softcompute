@@ -17,6 +17,10 @@ project "Test_SoftCompute"
    	"test-*.cc",
    	"test-*.h",
    }
+
+   if _OPTIONS['asan'] then
+      linkoptions { "-fsanitize=address" }
+   end
    
    links { "SoftCompute" }
 

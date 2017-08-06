@@ -616,6 +616,9 @@ int main(int argc, char **argv)
         std::cerr << "Failed to link shader" << std::endl;
         return EXIT_FAILURE;
       }
+
+      GLint idx = glGetUniformBlockIndex(prog, "radius");
+      std::cout << "idx = " << idx << std::endl;
     }
 
     softgl::ReleaseSoftGL();

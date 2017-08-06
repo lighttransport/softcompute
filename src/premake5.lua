@@ -40,12 +40,27 @@ project "SoftCompute"
    includedirs { spirv_cross_path .. '/include' }
 
    -- Loguru
+   includedirs { "../third_party/fmt" }
    includedirs { "../third_party/" }
 
    flags { "c++11" }
 
    -- Disable exception(for SPIRV-Cross code)
    defines { "SPIRV_CROSS_EXCEPTIONS_TO_ASSERTIONS=1" }
+
+   configuration "Debug"
+      optimize "Debug"
+      defines { "DEBUG" } -- -DDEBUG
+      symbols "On"
+
+   configuration "Release"
+      -- defines { "NDEBUG" } -- -NDEBUG
+      symbols "On"
+      if _OPTIONS["asan"]then
+         optimize "Debug"
+      else
+         optimize "Speed"
+      end
 
    -- MacOSX. Guess we use gcc.
    configuration { "macosx" }
@@ -127,9 +142,9 @@ project "SoftCompute"
          buildoptions { "-Weverything -Werror -Wno-padded -Wno-c++98-compat -Wno-c++98-compat-pedantic" } 
       end
 
-      if _OPTIONS['with-asan'] then
-         buildoptions { "-fsanitizer=address -fno-omit-frame-pointer" }
-         linkoptions { "-fsanitizer=address" }
+      if _OPTIONS['asan'] then
+         buildoptions { "-fsanitize=address -fno-omit-frame-pointer" }
+         linkoptions { "-fsanitize=address" }
       end
 
       if _OPTIONS['enable-jit'] then
@@ -173,7 +188,27 @@ project "Console_SoftCompute"
    
    links { "SoftCompute" }
 
+   if _OPTIONS['asan'] then
+      linkoptions { "-fsanitize=address" }
+   end
+
    configuration { "linux" }
       links { "dl", "pthread" }
 
    configuration { "macosx" }
+
+   configuration "Debug"
+      optimize "Debug"
+      defines { "DEBUG" } -- -DDEBUG
+      symbols "On"
+      targetname "softcompute_d"
+
+   configuration "Release"
+      -- defines { "NDEBUG" } -- -NDEBUG
+      symbols "On"
+      if _OPTIONS["asan"]then
+         optimize "Debug"
+      else
+         optimize "Speed"
+      end
+      targetname "softcompute"
