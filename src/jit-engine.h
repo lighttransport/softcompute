@@ -1,4 +1,4 @@
-// Copyright 2016 Light Transport Entertainment, Inc.
+// Copyright 2016-2018 Light Transport Entertainment, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,9 +19,6 @@
 #include <string>
 #include <vector>
 
-//#include "shader.h"
-//#include "material.h"
-
 namespace softcompute
 {
 
@@ -35,7 +32,7 @@ public:
     bool Compile(const std::string &type, const std::vector<std::string> &paths, const std::string &options,
                  const std::string &filename);
 
-    void *GetInterface();
+    void *GetInterfaceFuncPtr();
 
 private:
     class Impl;
@@ -51,6 +48,8 @@ public:
     /// Compile SPIRV-Cross generated cpp shader.
     ShaderInstance *Compile(const std::string &type, unsigned int shaderID, const std::vector<std::string> &paths,
                             const std::string &options, const std::string &filename);
+
+    ShaderInstance *GetShaderInterface(uint32_t shaderID);
 
     ShaderInstance *GetShaderInstance(unsigned int shaderID)
     {

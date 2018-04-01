@@ -49,7 +49,7 @@ public:
     ShaderInstance *Compile(const std::string &type, unsigned int shaderID, const std::vector<std::string> &paths,
                             const std::string &options, const std::string &filename);
 
-    ShaderInstance *GetShaderInstance(unsigned int shaderID)
+    ShaderInstance *GetShaderInstance(uint32_t shaderID)
     {
         // @todo { use array for faster lookup. }
         if (shaderInstanceMap_.find(shaderID) != shaderInstanceMap_.end())
@@ -58,7 +58,7 @@ public:
         }
         else
         {
-            return NULL;
+            return nullptr;
         }
     }
 

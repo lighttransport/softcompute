@@ -99,7 +99,8 @@ void *ShaderJITMemoryManager::getPointerToNamedFunction(const std::string &Name,
     void *pfn = CustomSymbolResolver(Name);
     if (!pfn && AbortOnFailure)
     {
-        report_fatal_error("Program used external function '" + Name + "' which could not be resolved!");
+        std::string msg = "Program used external function '" + Name + "' which could not be resolved!";
+        report_fatal_error(msg);
         return NULL;
     }
     return pfn;
@@ -437,7 +438,7 @@ bool ShaderInstance::Compile(const std::string &type, const std::vector<std::str
     return impl->Compile(type, paths, options, filename);
 }
 
-void *ShaderInstance::GetInterface()
+void *ShaderInstance::GetInterfaceFuncPtr()
 {
     assert(impl);
     return impl->GetInterface();
