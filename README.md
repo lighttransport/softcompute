@@ -15,7 +15,7 @@
 
 ## Requirements
 
-* Premake5 https://premake.github.io/download.html
+* cmake
 * Recent C++11 compiler(e.g. clang or gcc)
 
 ### Optional
@@ -43,19 +43,22 @@ Note that Compilation using Visual Sutdio(MSC) is not fully supported yet.
 
 ## Build on Linux or MacOSX
 
-    $ premake5 gmake
+    $ mkdir build
+    $ cd build
+    $ cmake ..
     $ make
 
 ### JIT version
 
-You can build JIT version of `SoftCompute` using `--enable-jit` flag.
+Turn `WITH_JIT` on to compile softcompute with JIT version using Clang/LLVM.
+You can specify the path to LLVM with `LLVM_DIR` option.
+Note that `LLVM_DIR` must point to cmake package dir(Usually `lib/cmake/llvm` subdirectory of LLVM distribution)
 
-    $ premake5 --enable-jit --llvm-config=/path/to/llvm-config --spirv-cross=/path/to/SPIRV-Cross gmake
+If you install Clang in the separate directory, you can use `CLANG_ROOT` to specify the path to Clang.
 
-Then,
-
-    $ export CXX=clang++
-    $ make
+    $ cmake -DWITH_JIT=On -DLLVM_DIR=/PATH/TO/LLVM/lib/cmake/llvm -Bbuild -H.
+    $ cd build
+    $ cmake
 
 ## Build on Windows
 
