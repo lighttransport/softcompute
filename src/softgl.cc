@@ -18,25 +18,7 @@
 
 #ifdef __clang__
 #pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wreserved-id-macro"
-#pragma clang diagnostic ignored "-Wdocumentation"
-#pragma clang diagnostic ignored "-Wundefined-reinterpret-cast"
-#pragma clang diagnostic ignored "-Wold-style-cast"
-#pragma clang diagnostic ignored "-Wsign-conversion"
-#pragma clang diagnostic ignored "-Wunused-parameter"
-#pragma clang diagnostic ignored "-Wshadow"
-#pragma clang diagnostic ignored "-Wswitch-enum"
-#pragma clang diagnostic ignored "-Wpadded"
-#pragma clang diagnostic ignored "-Wdouble-promotion"
-#pragma clang diagnostic ignored "-Wcast-align"
-#pragma clang diagnostic ignored "-Wimplicit-fallthrough"
-#pragma clang diagnostic ignored "-Wmissing-prototypes"
-#pragma clang diagnostic ignored "-Wdeprecated"
-#pragma clang diagnostic ignored "-Wweak-vtables"
-
-#if __has_warning("-Wzero-as-null-pointer-constant")
-#pragma clang diagnostic ignored "-Wzero-as-null-pointer-constant"
-#endif
+#pragma clang diagnostic ignored "-Weverything"
 
 #endif
 
@@ -107,23 +89,22 @@ struct Program {
   bool linked;
   char buf[6];
 
-  spirv_cross::CompilerCPP *cpp;
-
-  softcompute::ShaderInstance *instance;
-  spirv_cross_shader_t *shader;
+  std::shared_ptr<spirv_cross::CompilerCPP> cpp;
+  std::shared_ptr<softcompute::ShaderInstance> instance;
+  std::shared_ptr<spirv_cross_shader_t> shader;
 
   Program() {
     deleted = true;
     linked = false;
-    cpp = nullptr;
-    instance = nullptr;
-    shader = nullptr;
+    //cpp = nullptr;
+    //instance = nullptr;
+    //shader = nullptr;
   }
 
-  ~Program() {
-    delete instance;
-    delete shader;
-  }
+  //~Program() {
+    //delete instance;
+    //delete shader;
+  //}
 
   bool FindUniformLocation(const char *uniform_name, int *idx) {
     if (!cpp) {
@@ -258,8 +239,8 @@ static bool exec_command(std::vector<std::string> *outputs,
   outputs->clear();
 
   // This may not be needed, but for the safety.
-  // See popen(3) manual for details why calling fflush(NULL) here
-  fflush(NULL);
+  // See popen(3) manual for details why calling fflush(nullptr) here
+  fflush(nullptr);
 
 #if defined(_WIN32)
   FILE *pfp = _popen(cmd.c_str(), "r");
@@ -275,7 +256,7 @@ static bool exec_command(std::vector<std::string> *outputs,
   }
 
   char buf[4096];
-  while (fgets(buf, 4095, pfp) != NULL) {
+  while (fgets(buf, 4095, pfp) != nullptr) {
     // printf("%s", buf);
     outputs->push_back(buf);
   }
@@ -638,6 +619,7 @@ GLuint glCreateProgram() {
 
 GLuint glCreateShader(GLenum shader_type) {
   assert(shader_type == GL_COMPUTE_SHADER);
+  (void)shader_type;
 
   // Simple linear seach to find available Shader.
   // Skip 0th index since its reserved.
@@ -704,7 +686,7 @@ void glLinkProgram(GLuint program) {
 
   {
     // Save CPP compiler context of SPIRV-Cross for later use.
-    prog.cpp = new spirv_cross::CompilerCPP(shader.binary);
+    prog.cpp = std::make_shared<spirv_cross::CompilerCPP>(shader.binary);
   }
 
   {
@@ -732,8 +714,8 @@ void glLinkProgram(GLuint program) {
   std::string compile_options;
 
   // LOG_F(INFO, "load dll...");
-  prog.instance = engine.Compile("comp", /* id */ 0, search_paths,
-                                 compile_options, dll_filename);
+  prog.instance = std::make_shared<softcompute::ShaderInstance>(*(engine.Compile("comp", /* id */ 0, search_paths,
+                                 compile_options, dll_filename)));
 
   // LOG_F(INFO, "loaded dll...");
   spirv_cross_get_interface_fn interface_fn =
@@ -741,8 +723,8 @@ void glLinkProgram(GLuint program) {
           prog.instance->GetInterfaceFuncPtr());
 
   struct spirv_cross_interface *interface = interface_fn();
-  fprintf(stderr, "construct: %p\n", interface->construct());
-  prog.shader = interface->construct();
+  //fprintf(stderr, "construct: %p\n", interface->construct());
+  prog.shader = std::make_shared<spirv_cross_shader_t>(*(interface->construct()));
 
   // LOG_F(INFO, "linked...");
   prog.linked = true;
@@ -797,6 +779,7 @@ void glBufferData(GLenum target, GLsizeiptr size, const GLvoid *data,
                   GLenum usage) {
   InitializeGLContext();
   assert((target == GL_SHADER_STORAGE_BUFFER) || (target == GL_UNIFORM_BUFFER));
+  (void)target;
 
   if (gCtx->active_buffer_index == 0) return;
 
@@ -825,6 +808,8 @@ void glShaderBinary(GLsizei n, const GLuint *shaders, GLenum binaryformat,
   assert(length % 4 ==
          0);  // Size of SPIR-V binary must be the multiple of 32bit
   assert(binaryformat == GL_SHADER_BINARY_FORMAT_SPIR_V_ARB);
+  (void)n;
+  (void)binaryformat;
 
   size_t idx = shaders[0];
   if (gCtx->shaders[idx].deleted) {
@@ -976,7 +961,7 @@ void glDeleteProgram(GLuint program) {
 
   gCtx->programs[program].deleted = true;
 
-  softcompute::ShaderInstance *instance = gCtx->programs[program].instance;
+  softcompute::ShaderInstance *instance = gCtx->programs[program].instance.get();
   assert(instance);
 
   spirv_cross_get_interface_fn interface_fun =
@@ -984,7 +969,7 @@ void glDeleteProgram(GLuint program) {
           instance->GetInterfaceFuncPtr());
 
   assert(gCtx->programs[program].shader);
-  interface_fun()->destruct(gCtx->programs[program].shader);
+  interface_fun()->destruct(gCtx->programs[program].shader.get());
 
   gCtx->programs[program].deleted = true;
 }
@@ -992,6 +977,7 @@ void glDeleteProgram(GLuint program) {
 void glDispatchCompute(GLuint num_groups_x, GLuint num_groups_y,
                        GLuint num_groups_z) {
   InitializeGLContext();
+  (void)num_groups_z;
 
   // CHECK_F(num_groups_z == 1, "num_group_z must be 1 for a while");
 
@@ -1000,7 +986,7 @@ void glDispatchCompute(GLuint num_groups_x, GLuint num_groups_y,
 
   if (gCtx->active_program == 0) return;
 
-  spirv_cross_shader_t *shader = gCtx->programs[gCtx->active_program].shader;
+  spirv_cross_shader_t *shader = gCtx->programs[gCtx->active_program].shader.get();
   spirv_cross_get_interface_fn interface_fun =
       reinterpret_cast<spirv_cross_get_interface_fn>(
           gCtx->programs[gCtx->active_program].instance->GetInterfaceFuncPtr());

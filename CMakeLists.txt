@@ -10,6 +10,13 @@ option(WITH_JIT "Build with LLVM/clang JIT support" OFF)
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 find_package(Sanitizers) # Address sanitizer.
 
+# [glslang]
+# Disable some build optiosn for glslang
+set(SKIP_GLSLANG_INSTALL OFF CACHE INTERNAL "" FORCE)
+set(ENABLE_GLSLANG_BINARIES OFF CACHE INTERNAL "Builds glslangValidator and spirv-remap" FORCE)
+set(ENABLE_HLSL OFF CACHE INTERNAL "" FORCE)
+add_subdirectory(${CMAKE_SOURCE_DIR}/third_party/glslang)
+
 # threads
 find_package(Threads)
 
@@ -144,7 +151,7 @@ set (CMAKE_CXX_STANDARD 11)
 # Sanitizer
 find_package(Sanitizers)
 
-# [Sources]
+# [includes]
 include_directories(
     ${CMAKE_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}/include
@@ -168,11 +175,17 @@ endif(WITH_JIT)
 set (SOFTCOMPUTE_CORE_SOURCE
     ${SOFTCOMPUTE_ENGINE_SOURCE}
     ${CMAKE_SOURCE_DIR}/src/softgl.cc
+    )
+add_library(softcompute_core ${SOFTCOMPUTE_CORE_SOURCE})
+
+set (SPIRV_CROSS_SOURCE
     ${CMAKE_SOURCE_DIR}/third_party/SPIRV-Cross/spirv_cross.cpp
     ${CMAKE_SOURCE_DIR}/third_party/SPIRV-Cross/spirv_cfg.cpp
     ${CMAKE_SOURCE_DIR}/third_party/SPIRV-Cross/spirv_cpp.cpp
     ${CMAKE_SOURCE_DIR}/third_party/SPIRV-Cross/spirv_glsl.cpp
     )
+add_library(spirv_cross ${SPIRV_CROSS_SOURCE})
+
 
 # [Executable]
 add_executable ( softcompute
@@ -183,6 +196,9 @@ add_executable ( softcompute
 )
 
 target_link_libraries( softcompute PRIVATE
+    softcompute_core
+    spirv_cross
+    glslang
     ${SOFTCOMPUTE_EXT_LIBS}
     ${LIBCLANG_LIBRARIES}
     ${CMAKE_THREAD_LIBS_INIT}
@@ -191,9 +207,7 @@ target_link_libraries( softcompute PRIVATE
 
 
 # Increase warning level for clang.
-#IF (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-#    target_compile_options(softcompute PRIVATE -Weverything -Werror -Wno-padded -Wno-c++98-compat-pedantic -Wno-documentation -Wno-documentation-unknown-command)
-#ENDIF ()
+target_compile_options(softcompute_core PRIVATE $<$<CXX_COMPILER_ID:Clang>: -Weverything -Werror -Wno-padded -Wno-c++98-compat-pedantic -Wno-documentation -Wno-documentation-unknown-command>)
 
 add_sanitizers(softcompute)
 
