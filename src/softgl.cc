@@ -1,3 +1,8 @@
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Weverything"
+#endif
+
 #include "softgl.h"
 
 #include <algorithm>
@@ -16,11 +21,6 @@
 #include <unistd.h>
 #endif
 
-#ifdef __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Weverything"
-
-#endif
 
 #include "spirv_cpp.hpp"
 #include "spirv_cross/external_interface.h"
@@ -28,6 +28,10 @@
 #include "spirv_glsl.hpp"
 
 #include "spdlog/spdlog.h"
+
+// glslang
+#include "glslang/Public/ShaderLang.h"
+#include "SPIRV/GlslangToSpv.h"
 
 #ifdef __clang__
 #pragma clang diagnostic pop
@@ -234,6 +238,7 @@ static std::string GenerateUniqueFilename() {
   return name;
 }
 
+#if 0
 static bool exec_command(std::vector<std::string> *outputs,
                          const std::string &cmd) {
   outputs->clear();
@@ -277,7 +282,190 @@ static bool exec_command(std::vector<std::string> *outputs,
 
   return true;
 }
+#endif
 
+static void PutsIfNonEmpty(const char *str)
+{
+  if (str && str[0]) {
+    puts(str);
+  }
+}
+
+// glsl string -> spirv
+static bool compile_glsl_string(const std::string &glsl_input, const std::string &filename, std::vector<uint32_t> *out_spirv) {
+
+  TBuiltInResource resources = {
+    /* .MaxLights = */ 32,
+    /* .MaxClipPlanes = */ 6,
+    /* .MaxTextureUnits = */ 32,
+    /* .MaxTextureCoords = */ 32,
+    /* .MaxVertexAttribs = */ 64,
+    /* .MaxVertexUniformComponents = */ 4096,
+    /* .MaxVaryingFloats = */ 64,
+    /* .MaxVertexTextureImageUnits = */ 32,
+    /* .MaxCombinedTextureImageUnits = */ 80,
+    /* .MaxTextureImageUnits = */ 32,
+    /* .MaxFragmentUniformComponents = */ 4096,
+    /* .MaxDrawBuffers = */ 32,
+    /* .MaxVertexUniformVectors = */ 128,
+    /* .MaxVaryingVectors = */ 8,
+    /* .MaxFragmentUniformVectors = */ 16,
+    /* .MaxVertexOutputVectors = */ 16,
+    /* .MaxFragmentInputVectors = */ 15,
+    /* .MinProgramTexelOffset = */ -8,
+    /* .MaxProgramTexelOffset = */ 7,
+    /* .MaxClipDistances = */ 8,
+    /* .MaxComputeWorkGroupCountX = */ 65535,
+    /* .MaxComputeWorkGroupCountY = */ 65535,
+    /* .MaxComputeWorkGroupCountZ = */ 65535,
+    /* .MaxComputeWorkGroupSizeX = */ 1024,
+    /* .MaxComputeWorkGroupSizeY = */ 1024,
+    /* .MaxComputeWorkGroupSizeZ = */ 64,
+    /* .MaxComputeUniformComponents = */ 1024,
+    /* .MaxComputeTextureImageUnits = */ 16,
+    /* .MaxComputeImageUniforms = */ 8,
+    /* .MaxComputeAtomicCounters = */ 8,
+    /* .MaxComputeAtomicCounterBuffers = */ 1,
+    /* .MaxVaryingComponents = */ 60,
+    /* .MaxVertexOutputComponents = */ 64,
+    /* .MaxGeometryInputComponents = */ 64,
+    /* .MaxGeometryOutputComponents = */ 128,
+    /* .MaxFragmentInputComponents = */ 128,
+    /* .MaxImageUnits = */ 8,
+    /* .MaxCombinedImageUnitsAndFragmentOutputs = */ 8,
+    /* .MaxCombinedShaderOutputResources = */ 8,
+    /* .MaxImageSamples = */ 0,
+    /* .MaxVertexImageUniforms = */ 0,
+    /* .MaxTessControlImageUniforms = */ 0,
+    /* .MaxTessEvaluationImageUniforms = */ 0,
+    /* .MaxGeometryImageUniforms = */ 0,
+    /* .MaxFragmentImageUniforms = */ 8,
+    /* .MaxCombinedImageUniforms = */ 8,
+    /* .MaxGeometryTextureImageUnits = */ 16,
+    /* .MaxGeometryOutputVertices = */ 256,
+    /* .MaxGeometryTotalOutputComponents = */ 1024,
+    /* .MaxGeometryUniformComponents = */ 1024,
+    /* .MaxGeometryVaryingComponents = */ 64,
+    /* .MaxTessControlInputComponents = */ 128,
+    /* .MaxTessControlOutputComponents = */ 128,
+    /* .MaxTessControlTextureImageUnits = */ 16,
+    /* .MaxTessControlUniformComponents = */ 1024,
+    /* .MaxTessControlTotalOutputComponents = */ 4096,
+    /* .MaxTessEvaluationInputComponents = */ 128,
+    /* .MaxTessEvaluationOutputComponents = */ 128,
+    /* .MaxTessEvaluationTextureImageUnits = */ 16,
+    /* .MaxTessEvaluationUniformComponents = */ 1024,
+    /* .MaxTessPatchComponents = */ 120,
+    /* .MaxPatchVertices = */ 32,
+    /* .MaxTessGenLevel = */ 64,
+    /* .MaxViewports = */ 16,
+    /* .MaxVertexAtomicCounters = */ 0,
+    /* .MaxTessControlAtomicCounters = */ 0,
+    /* .MaxTessEvaluationAtomicCounters = */ 0,
+    /* .MaxGeometryAtomicCounters = */ 0,
+    /* .MaxFragmentAtomicCounters = */ 8,
+    /* .MaxCombinedAtomicCounters = */ 8,
+    /* .MaxAtomicCounterBindings = */ 1,
+    /* .MaxVertexAtomicCounterBuffers = */ 0,
+    /* .MaxTessControlAtomicCounterBuffers = */ 0,
+    /* .MaxTessEvaluationAtomicCounterBuffers = */ 0,
+    /* .MaxGeometryAtomicCounterBuffers = */ 0,
+    /* .MaxFragmentAtomicCounterBuffers = */ 1,
+    /* .MaxCombinedAtomicCounterBuffers = */ 1,
+    /* .MaxAtomicCounterBufferSize = */ 16384,
+    /* .MaxTransformFeedbackBuffers = */ 4,
+    /* .MaxTransformFeedbackInterleavedComponents = */ 64,
+    /* .MaxCullDistances = */ 8,
+    /* .MaxCombinedClipAndCullDistances = */ 8,
+    /* .MaxSamples = */ 4,
+    /* .limits = */ {
+        /* .nonInductiveForLoops = */ 1,
+        /* .whileLoops = */ 1,
+        /* .doWhileLoops = */ 1,
+        /* .generalUniformIndexing = */ 1,
+        /* .generalAttributeMatrixVectorIndexing = */ 1,
+        /* .generalVaryingIndexing = */ 1,
+        /* .generalSamplerIndexing = */ 1,
+        /* .generalVariableIndexing = */ 1,
+        /* .generalConstantMatrixVectorIndexing = */ 1,
+    }};
+
+
+  glslang::TProgram &program = *new glslang::TProgram;
+  glslang::TShader *shader = new glslang::TShader(EShLangCompute); // compute shader
+
+  const char *text[1];
+  const char *filename_list[1];
+  int count = 1;
+
+  text[0] = glsl_input.c_str();
+  filename_list[0] = filename.c_str();
+
+  shader->setStringsWithLengthsAndNames(text, nullptr, filename_list, count);
+
+  //std::vector<std::string> processes; // TODO(LTE)
+  //shader->addProcesses(processes);
+
+  // SPIR-V settings.
+  shader->setEnvTarget(glslang::EShTargetSpv, glslang::EShTargetSpv_1_0);
+
+  EShMessages messages = EShMsgDefault;
+
+  // TODO(LTE): Includer, preprocess.
+  bool compile_ok = shader->parse(&resources, /* version */110, false, messages);
+
+  PutsIfNonEmpty(shader->getInfoLog());
+  PutsIfNonEmpty(shader->getInfoDebugLog());
+
+  if (!compile_ok) {
+    std::cerr << "Compile failed." << std::endl;
+  } else {
+    std::cout << "Compile OK." << std::endl;
+  }
+
+  program.addShader(shader);
+
+  bool link_ok = program.link(messages);
+  if (!link_ok) {
+    std::cerr << "Link failed." << std::endl;
+  } else {
+    std::cout << "Link OK." << std::endl;
+  }
+
+  bool ok = false;
+
+  if (compile_ok && link_ok) {
+
+    glslang::SpvOptions spv_options;
+    spv_options.disableOptimizer = false;
+    spv_options.optimizeSize = false;
+    spv::SpvBuildLogger logger;
+
+    std::vector<unsigned int> spirv;
+
+    glslang::GlslangToSpv(*program.getIntermediate(static_cast<EShLanguage>(EShLangCompute)), spirv, &logger, &spv_options);
+
+    if (spirv.size() > 0) {
+      (*out_spirv) = spirv;
+      ok = true;
+    }
+  }
+
+#if 0
+  // From ResourceLimits.cpp in glslang/StandAlone
+  int ret = ShCompile(compiler, &shader_string, 1, nullptr, EShOptNone, &resources, options, /* version */110, false, messages);
+
+  free(shader_string);
+#endif
+
+  delete &program;
+  delete shader;
+
+  return true;
+}
+
+
+#if 0
 // glsl -> spirv
 static bool compile_glsl(const std::string &output_filename, bool verbose,
                          const std::string &glsl_filename) {
@@ -321,7 +509,6 @@ static bool compile_glsl(const std::string &output_filename, bool verbose,
   return true;
 }
 
-#if 0
 // spirv file -> c++
 static bool compile_spirv(const std::string &output_filename, bool verbose, const std::string &spirv_filename)
 {
@@ -396,9 +583,9 @@ static bool compile_spirv_binary(const std::string &output_filename,
 
   return true;
 }
-
 #endif
 
+#if 0
 // c++ -> dll
 static bool compile_cpp(const std::string &output_filename,
                         const std::string &options, bool verbose,
@@ -456,6 +643,7 @@ static bool compile_cpp(const std::string &output_filename,
 
   return true;
 }
+#endif
 
 // -------------------------------------------------------------------
 
@@ -694,9 +882,11 @@ void glLinkProgram(GLuint program) {
         compile_spirv_binary(cpp_filename, /* verbose */ true, shader.binary);
     if (!ret) {
       // ABORT_F("Failed to translate SPIR-V binary to .cpp");
+      std::cerr << "Failed to translate SPIR-V binary to .cpp" << std::endl;
     }
   }
 
+#if 0
   {
     std::string cpp_compile_options;  // FIXME(syoyo): Supply compiler options
 
@@ -728,6 +918,37 @@ void glLinkProgram(GLuint program) {
 
   // LOG_F(INFO, "linked...");
   prog.linked = true;
+#else
+
+  softcompute::ShaderEngine engine;
+  std::vector<std::string> search_paths;
+  std::string compile_options;
+
+  {
+    std::stringstream ss;
+
+    //ss << "-I./third_party/glm ";  // TODO(syoyo): User-supplied path to glm
+    ss << "-I./third_party/SPIRV-Cross/include ";  // TODO(syoyo): User-supplied
+                                                   // path to SPIRV-Cross/include.
+
+    compile_options = ss.str();
+  }
+    
+  prog.instance = std::make_shared<softcompute::ShaderInstance>(*(engine.Compile("comp", /* id */ 0, search_paths, compile_options, cpp_filename)));
+
+  // LOG_F(INFO, "loaded dll...");
+  spirv_cross_get_interface_fn interface_fn =
+      reinterpret_cast<spirv_cross_get_interface_fn>(
+          prog.instance->GetInterfaceFuncPtr());
+
+  struct spirv_cross_interface *interface = interface_fn();
+  //fprintf(stderr, "construct: %p\n", interface->construct());
+  prog.shader = std::make_shared<spirv_cross_shader_t>(*(interface->construct()));
+
+  // LOG_F(INFO, "linked...");
+  prog.linked = true;
+
+#endif
 }
 
 void glBindBuffer(GLenum target, GLuint buffer) {
@@ -1036,6 +1257,7 @@ void glCompileShader(GLuint shader_id) {
     return;
   }
 
+#if 0
   std::string basename = GenerateUniqueFilename();
   std::string spirv_filename = basename + ".spv";
   std::string cpp_filename = basename + ".cc";
@@ -1089,6 +1311,20 @@ void glCompileShader(GLuint shader_id) {
 
     shader.binary = std::move(buf);
   }
+#else
+  //ShHandle compiler = ShConstructCompiler(/* lang */EShLangCompute, /* debugOpts */0);
+
+  glslang::InitializeProcess(); // Required before calling glslang functions.
+
+  bool ret = compile_glsl_string(shader.source, "dummy", &shader.binary);
+  if (!ret) {
+    shader.binary.clear(); // for sure
+  }
+  std::cout << "len = " << shader.binary.size() << std::endl;
+
+  glslang::FinalizeProcess();
+
+#endif
 }
 
 GLuint glGetProgramResourceIndex(GLuint program, GLenum programInterface,

@@ -62,11 +62,7 @@ If you install Clang in the separate directory, you can use `CLANG_ROOT` to spec
 
 ## Build on Windows
 
-Currently MinGW + DLL version works on Windows.
-(Visual Studio + clang JIT, and Visual Studio + MinGW dll has some C++ language & linkage problem and cannot work at this time)
-
-    $ premake5 gmake
-    $ make
+T.B.W.
 
 ## Setup and how to run
 
@@ -132,6 +128,7 @@ Only support simple compute shader at this time.
 
 ## TODO
 
+* [ ] Integrate glslangValidator as a library.
 * [ ] Read header path from file or else
 * [ ] Support various shader type.
 * [ ] Flexible shader value binding.

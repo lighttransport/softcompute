@@ -42,6 +42,8 @@
 
 #include "OptionParser.h"
 
+#include "nlohmann/json.hpp"
+
 #ifdef __clang__
 #pragma clang diagnostic pop
 #endif
@@ -444,6 +446,8 @@ int main(int argc, char **argv)
     softcompute::ShaderEngine engine;
 
     auto start_time = std::chrono::high_resolution_clock::now();
+
+    std::cout << "compiler options: " << compiler_options;
 
     std::vector<std::string> paths;
     softcompute::ShaderInstance *instance =

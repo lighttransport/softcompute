@@ -10,16 +10,6 @@ option(WITH_JIT "Build with LLVM/clang JIT support" OFF)
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 find_package(Sanitizers) # Address sanitizer.
 
-# [glslang]
-# Disable some build optiosn for glslang
-set(SKIP_GLSLANG_INSTALL OFF CACHE INTERNAL "" FORCE)
-set(ENABLE_GLSLANG_BINARIES OFF CACHE INTERNAL "Builds glslangValidator and spirv-remap" FORCE)
-set(ENABLE_HLSL OFF CACHE INTERNAL "" FORCE)
-add_subdirectory(${CMAKE_SOURCE_DIR}/third_party/glslang)
-
-# threads
-find_package(Threads)
-
 if (WITH_JIT)
 
   #find_package(LibClang REQUIRED)
@@ -73,6 +63,12 @@ if (WITH_JIT)
 
   if (NOT "${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-rtti")
+
+    # Specify custom libc++
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -nostdinc++")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -I/home/syoyo/local/clang+llvm/include/c++/v1")
+    #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
+    link_directories("/home/syoyo/local/clang+llvm/lib")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-strict-aliasing")
   endif()
@@ -89,10 +85,22 @@ if (WITH_JIT)
   #include_directories(${LLVM_INCLUDE_DIRS})
   include_directories(${LIBCLANG_INCLUDE_DIRS})
 
-  set(SOFTCOMPUTE_JIT_LIBS ${CLANG_LIBS} ${LLVM_LIBS})
+  # libc++
+  set(SOFTCOMPUTE_JIT_LIBS ${CLANG_LIBS} ${LLVM_LIBS} c++ c++abi)
 
   add_definitions("-DSOFTCOMPUTE_ENABLE_JIT")
 endif (WITH_JIT)
+
+
+# [glslang]
+# Disable some build optiosn for glslang
+set(SKIP_GLSLANG_INSTALL OFF CACHE INTERNAL "" FORCE)
+set(ENABLE_GLSLANG_BINARIES OFF CACHE INTERNAL "Builds glslangValidator and spirv-remap" FORCE)
+set(ENABLE_HLSL OFF CACHE INTERNAL "" FORCE)
+add_subdirectory(${CMAKE_SOURCE_DIR}/third_party/glslang)
+
+# threads
+find_package(Threads)
 
 if (WITH_OPENMP)
   find_package(OpenMP)
@@ -159,6 +167,8 @@ include_directories(
     ${CMAKE_SOURCE_DIR}/third_party/SPIRV-Cross
     ${CMAKE_SOURCE_DIR}/third_party/glm
     ${CMAKE_SOURCE_DIR}/third_party/spdlog/include
+    ${CMAKE_SOURCE_DIR}/third_party/glslang
+    ${CMAKE_SOURCE_DIR}/third_party/json/include
     ${CMAKE_SOURCE_DIR}/src
 )
 
@@ -199,8 +209,8 @@ target_link_libraries( softcompute PRIVATE
     softcompute_core
     spirv_cross
     glslang
+    SPIRV
     ${SOFTCOMPUTE_EXT_LIBS}
-    ${LIBCLANG_LIBRARIES}
     ${CMAKE_THREAD_LIBS_INIT}
     ${CMAKE_DL_LIBS}
     ${SOFTCOMPUTE_JIT_LIBS})

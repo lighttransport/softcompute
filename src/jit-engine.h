@@ -31,7 +31,7 @@ class ShaderInstance {
   bool Compile(const std::string &type, const std::vector<std::string> &paths,
                const std::string &options, const std::string &filename);
 
-  void *GetInterfaceFuncPtr();
+  void *GetInterfaceFuncPtr() const;
 
  private:
   class Impl;

@@ -17,15 +17,15 @@
 #undef DEBUG
 #endif
 
-#include <cstdio>
-#include <iostream>
-#include <map>
-#include <vector>
-
 #ifdef __clang__
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Weverything"
 #endif
+
+#include <cstdio>
+#include <iostream>
+#include <map>
+#include <vector>
 
 #include "clang/Basic/DiagnosticOptions.h"
 #include "clang/CodeGen/CodeGenAction.h"
@@ -129,7 +129,7 @@ class ShaderInstance::Impl {
 
   bool Compile(const std::string &type, const std::vector<std::string> &paths,
                const std::string &options, const std::string &filename);
-  void *GetInterface();
+  void *GetInterface() const;
 
  private:
   llvm::Function *EntryFn;
@@ -205,11 +205,13 @@ bool ShaderInstance::Impl::Compile(const std::string &type,
                                 // error in musl libc environment.
 
   Args.push_back("-std=c++11");
+  Args.push_back("-nostdinc++"); // Use custom installed libc++
+  Args.push_back("-stdlib=c++");
   Args.push_back(options.c_str());
 
   Args.push_back("-fno-exceptions");
   Args.push_back("-fno-rtti");
-  Args.push_back("-D_GNU_SOURCE");
+  //Args.push_back("-D_GNU_SOURCE");
   Args.push_back("-D__STDC_CONSTANT_MACROS");
   Args.push_back("-D__STDC_FORMAT_MACROS");
   Args.push_back("-D__STDC_LIMIT_MACROS");
@@ -218,15 +220,34 @@ bool ShaderInstance::Impl::Compile(const std::string &type,
   Args.push_back("-I.");
   Args.push_back("-Ispirv_cross");
 
+  Args.push_back("-Ithird_party/SPIRV-Cross/include");
+  Args.push_back("-Ithird_party/glm");
+
   // @fixme { Read list of header directory from somewhere, not hard-coded. }
 
   // Linux
 
   // Edit this path fit to your environment.
-  Args.push_back("-I/usr/include/c++/4.8.5");  // CentOS7
-  Args.push_back("-I/usr/include/c++/4.8.5/x86_64-redhat-linux");
-  Args.push_back("-I/usr/include/c++/4.8.5/backward");
-  Args.push_back("-I/usr/lib/gcc/x86_64-redhat-linux/4.8.5/finclude/");
+  //Args.push_back("-I/usr/include/c++/4.8.5");  // CentOS7
+  //Args.push_back("-I/usr/include/c++/4.8.5/x86_64-redhat-linux");
+  //Args.push_back("-I/usr/include/c++/4.8.5/backward");
+  //Args.push_back("-I/usr/lib/gcc/x86_64-redhat-linux/4.8.5/finclude/");
+
+  // Ubuntu 16.04
+  //Args.push_back("-I/usr/include/c++/5");
+  //Args.push_back("-I/usr/include/c++/5/backward");
+  //Args.push_back("-I/usr/lib/gcc/x86_64-linux-gnu/5/include/");
+  //Args.push_back("-I/usr/lib/gcc/x86_64-linux-gnu/5/include-fixed/");
+
+  //Args.push_back("-isystem/home/syoyo/local/llvm-libcxx-dist/lib/clang/7.0.0/include");
+  //Args.push_back("-I/home/syoyo/local/clang+llvm/include/c++/v1");
+  Args.push_back("-isystem/home/syoyo/local/clang+llvm/include/c++/v1");
+  // HACK
+  //Args.push_back("-I/home/syoyo/local/clang+llvm-5.0.1-x86_64-linux-gnu-ubuntu-16.04/include/c++/v1");
+  //Args.push_back("-I/home/syoyo/local/clang+llvm-5.0.1-x86_64-linux-gnu-ubuntu-16.04/lib/clang/5.0.1/include");
+  //Args.push_back("/home/syoyo/local/clang+llvm-5.0.1-x86_64-linux-gnu-ubuntu-16.04/lib/libc++.a");
+
+
   Args.push_back("-I/usr/include");
   Args.push_back("-I/usr/local/include");
   Args.push_back(
@@ -268,7 +289,7 @@ bool ShaderInstance::Impl::Compile(const std::string &type,
   }
 
   for (size_t i = 0; i < Args.size(); i++) {
-    // printf("arg: %s\n", Args[i]);
+     printf("arg: %s\n", Args[i]);
   }
 
   std::unique_ptr<Compilation> C(TheDriver.BuildCompilation(Args));
@@ -283,12 +304,14 @@ bool ShaderInstance::Impl::Compile(const std::string &type,
   // We expect to get back exactly one command job, if we didn't something
   // failed. Extract that job from the compilation.
   const driver::JobList &Jobs = C->getJobs();
+  std::cout << "jobs " << Jobs.size() << std::endl;
+
   if (Jobs.size() != 1 || !isa<driver::Command>(*Jobs.begin())) {
     llvm::SmallString<256> Msg;
     llvm::raw_svector_ostream OS(Msg);
     Jobs.Print(OS, "; ", true);
     Diags.Report(diag::err_fe_expected_compiler_job) << OS.str();
-    printf("job error\n");
+    std::cerr << "job error" << std::endl;
     llvm::errs() << OS.str();
     return false;
   }
@@ -296,7 +319,7 @@ bool ShaderInstance::Impl::Compile(const std::string &type,
   const driver::Command &Cmd = cast<driver::Command>(*Jobs.begin());
   if (llvm::StringRef(Cmd.getCreator().getName()) != "clang") {
     Diags.Report(diag::err_fe_expected_clang_command);
-    printf("clang error\n");
+    std::cerr << "clang error\n" << std::endl;
     return false;
   }
 
@@ -318,6 +341,7 @@ bool ShaderInstance::Impl::Compile(const std::string &type,
   // filter out '-backend-option -vectorize-loops'
   driver::ArgStringList CCArgs;
   for (size_t i = 0; i < CCArgInputs.size(); i++) {
+    std::cout << "args " << CCArgInputs[i] << std::endl;
     if ((strcmp(CCArgInputs[i], "-backend-option") == 0) ||
         (strcmp(CCArgInputs[i], "-vectorize-loops") == 0)) {
       // skip;
@@ -415,7 +439,7 @@ bool ShaderInstance::Impl::Compile(const std::string &type,
   return true;
 }
 
-void *ShaderInstance::Impl::GetInterface() {
+void *ShaderInstance::Impl::GetInterface() const {
   assert(EntryPoint);
   return EntryPoint;
 }
@@ -444,7 +468,7 @@ bool ShaderInstance::Compile(const std::string &type,
   return impl->Compile(type, paths, options, filename);
 }
 
-void *ShaderInstance::GetInterfaceFuncPtr() {
+void *ShaderInstance::GetInterfaceFuncPtr() const {
   assert(impl);
   return impl->GetInterface();
 }
