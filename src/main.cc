@@ -603,6 +603,8 @@ int main(int argc, char **argv)
 
     softgl::InitSoftGL();
 
+    softgl::SetJITCompilerOptions(compiler_options.c_str());
+
     // HACK
     {
       GLuint shader_id = glCreateShader(GL_COMPUTE_SHADER);

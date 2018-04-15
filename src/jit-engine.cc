@@ -24,6 +24,7 @@
 
 #include <cstdio>
 #include <iostream>
+#include <sstream>
 #include <map>
 #include <vector>
 
@@ -146,6 +147,19 @@ ShaderInstance::Impl::~Impl() {
   EE = nullptr;
 }
 
+static std::vector<std::string> split(std::string strToSplit, char delimeter)
+{   
+    std::stringstream ss;
+    ss << strToSplit;
+    std::string item;
+    std::vector<std::string> splittedStrings;
+    while (std::getline(ss, item, delimeter))
+    {  
+       splittedStrings.push_back(item);
+    }
+    return splittedStrings;
+}
+
 bool ShaderInstance::Impl::Compile(const std::string &type,
                                    const std::vector<std::string> &paths,
                                    const std::string &options,
@@ -186,6 +200,10 @@ bool ShaderInstance::Impl::Compile(const std::string &type,
   std::string triple = llvm::sys::getDefaultTargetTriple();
 #endif
 
+  // Split option string with whitespace delimiter.
+  // Assume `options` does not contain white space file path.
+  std::vector<std::string> custom_opts = split(options, ' ');
+
   Driver TheDriver(Path, triple, Diags);
   TheDriver.setTitle("clang interpreter");
 
@@ -207,7 +225,10 @@ bool ShaderInstance::Impl::Compile(const std::string &type,
   Args.push_back("-std=c++11");
   Args.push_back("-nostdinc++"); // Use custom installed libc++
   Args.push_back("-stdlib=c++");
-  Args.push_back(options.c_str());
+
+  for (const auto &o : custom_opts) {
+    Args.push_back(o.c_str());
+  }
 
   Args.push_back("-fno-exceptions");
   Args.push_back("-fno-rtti");
@@ -239,20 +260,8 @@ bool ShaderInstance::Impl::Compile(const std::string &type,
   //Args.push_back("-I/usr/lib/gcc/x86_64-linux-gnu/5/include/");
   //Args.push_back("-I/usr/lib/gcc/x86_64-linux-gnu/5/include-fixed/");
 
-  //Args.push_back("-isystem/home/syoyo/local/llvm-libcxx-dist/lib/clang/7.0.0/include");
-  //Args.push_back("-I/home/syoyo/local/clang+llvm/include/c++/v1");
-  Args.push_back("-isystem/home/syoyo/local/clang+llvm/include/c++/v1");
-  // HACK
-  //Args.push_back("-I/home/syoyo/local/clang+llvm-5.0.1-x86_64-linux-gnu-ubuntu-16.04/include/c++/v1");
-  //Args.push_back("-I/home/syoyo/local/clang+llvm-5.0.1-x86_64-linux-gnu-ubuntu-16.04/lib/clang/5.0.1/include");
-  //Args.push_back("/home/syoyo/local/clang+llvm-5.0.1-x86_64-linux-gnu-ubuntu-16.04/lib/libc++.a");
-
-
-  Args.push_back("-I/usr/include");
-  Args.push_back("-I/usr/local/include");
-  Args.push_back(
-      "-I/home/syoyo/local/clang+llvm-3.8.0-linux-x86_64-centos6/lib/clang/"
-      "3.8.0/include");
+  //Args.push_back("-I/usr/include");
+  //Args.push_back("-I/usr/local/include");
 
   // OSX
   Args.push_back(

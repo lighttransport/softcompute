@@ -135,7 +135,12 @@ void glGetProgramiv(GLuint program, GLenum pname, GLint *params);
 void glGetPrograminfoLog(GLuint program, GLsizei maxLength, GLsizei *length, GLchar *infoLog);
 GLuint glGetUniformBlockIndex(GLuint program, const GLchar *uniformBlockName);
 
+//
+// SoftGL specific.
+//
+
 void InitSoftGL();
+void SetJITCompilerOptions(const char *option_string);
 void ReleaseSoftGL();
 
 } // softgl

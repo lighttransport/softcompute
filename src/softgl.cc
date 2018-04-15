@@ -161,6 +161,14 @@ class SoftGLContext {
 
   ~SoftGLContext() {}
 
+  void SetJITCompilerOptions(const std::string &option_string) {
+    jit_compile_options_ = option_string;
+  }
+
+  std::string GetJITCompileOptions() const {
+    return jit_compile_options_;
+  }
+
   void SetGLError(const GLenum error) { error_ = error; }
 
   Program &GetProgram(uint32_t idx) {
@@ -185,7 +193,10 @@ class SoftGLContext {
   std::vector<Program> programs;
   std::vector<Shader> shaders;
 
+
  private:
+  std::string jit_compile_options_;
+
   GLenum error_;
 };
 
@@ -677,6 +688,15 @@ static void SetGLError(GLenum error) {
   }
 }
 
+void SetJITCompilerOptions(const char *option_string) {
+  InitializeGLContext();
+
+  if (option_string) {
+    gCtx->SetJITCompilerOptions(std::string(option_string));
+  }
+}
+
+
 void glUniform1f(GLint location, GLfloat v0) {
   InitializeGLContext();
   if (location < 0) return;
@@ -928,8 +948,9 @@ void glLinkProgram(GLuint program) {
     std::stringstream ss;
 
     //ss << "-I./third_party/glm ";  // TODO(syoyo): User-supplied path to glm
-    ss << "-I./third_party/SPIRV-Cross/include ";  // TODO(syoyo): User-supplied
-                                                   // path to SPIRV-Cross/include.
+    ss << "-I./third_party/SPIRV-Cross/include ";  
+
+    ss << gCtx->GetJITCompileOptions() << " ";
 
     compile_options = ss.str();
   }

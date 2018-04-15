@@ -204,7 +204,6 @@ add_library(spirv_cross SHARED ${SPIRV_CROSS_SOURCE})
 add_executable ( softcompute
     ${CMAKE_SOURCE_DIR}/src/main.cc
     ${CMAKE_SOURCE_DIR}/src/OptionParser.cpp
-    ${SOFTCOMPUTE_CORE_SOURCE}
     ${SOFTCOMPUTE_EXTRA_SOURCE}
 )
 
