@@ -5,12 +5,16 @@ project(SoftCompute)
 # [Build options] -------------------------------------------------------
 option(WITH_OPENMP "Build with OpenMP support" OFF)
 option(WITH_JIT "Build with LLVM/clang JIT support" OFF)
+option(LIBCXX_INCLUDE_DIR "Path to libcxx headers)" "/usr/include/c++/v1")
 # -----------------------------------------------------------------------
 
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 find_package(Sanitizers) # Address sanitizer.
 
 if (WITH_JIT)
+
+  # Enable PIC 
+  set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
   #find_package(LibClang REQUIRED)
   find_package(LLVM REQUIRED CONFIG NO_CMAKE_BUILDS_PATH)
@@ -64,15 +68,13 @@ if (WITH_JIT)
   if (NOT "${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-rtti")
 
-    # Specify custom libc++
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -nostdinc++")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -I/home/syoyo/local/clang+llvm/include/c++/v1")
-    #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
-    link_directories("/home/syoyo/local/clang+llvm/lib")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-strict-aliasing")
   endif()
 
+  # Use libc++
+  set(CMAKE_EXE_LINKER_FLAG "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++ -lc++ -lc++abi")
+  add_definitions("-nostdinc++")
 
   message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
   message(STATUS "Using LLVMConfig.cmake in : ${LLVM_DIR}")
@@ -84,6 +86,7 @@ if (WITH_JIT)
 
   #include_directories(${LLVM_INCLUDE_DIRS})
   include_directories(${LIBCLANG_INCLUDE_DIRS})
+  include_directories(${LIBCXX_INCLUDE_DIR})
 
   # libc++
   set(SOFTCOMPUTE_JIT_LIBS ${CLANG_LIBS} ${LLVM_LIBS} c++ c++abi)
@@ -186,7 +189,7 @@ set (SOFTCOMPUTE_CORE_SOURCE
     ${SOFTCOMPUTE_ENGINE_SOURCE}
     ${CMAKE_SOURCE_DIR}/src/softgl.cc
     )
-add_library(softcompute_core ${SOFTCOMPUTE_CORE_SOURCE})
+add_library(softcompute_core SHARED ${SOFTCOMPUTE_CORE_SOURCE})
 
 set (SPIRV_CROSS_SOURCE
     ${CMAKE_SOURCE_DIR}/third_party/SPIRV-Cross/spirv_cross.cpp
@@ -194,7 +197,7 @@ set (SPIRV_CROSS_SOURCE
     ${CMAKE_SOURCE_DIR}/third_party/SPIRV-Cross/spirv_cpp.cpp
     ${CMAKE_SOURCE_DIR}/third_party/SPIRV-Cross/spirv_glsl.cpp
     )
-add_library(spirv_cross ${SPIRV_CROSS_SOURCE})
+add_library(spirv_cross SHARED ${SPIRV_CROSS_SOURCE})
 
 
 # [Executable]
