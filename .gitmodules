@@ -1,9 +1,6 @@
 [submodule "glm"]
 	path = third_party/glm
 	url = https://github.com/g-truc/glm.git
-[submodule "SPIRV-Cross"]
-	path = third_party/SPIRV-Cross
-	url = https://github.com/syoyo/SPIRV-Cross.git
 [submodule "third_party/glslang"]
 	path = third_party/glslang
 	url = https://github.com/KhronosGroup/glslang
