@@ -197,14 +197,26 @@ set (SOFTCOMPUTE_CORE_SOURCE
     ${CMAKE_SOURCE_DIR}/src/softgl.cc
     )
 add_library(softcompute_core SHARED ${SOFTCOMPUTE_CORE_SOURCE})
+target_link_libraries(softcompute_core PRIVATE glslang SPIRV)
 
-set (SPIRV_CROSS_SOURCE
-    ${CMAKE_SOURCE_DIR}/third_party/SPIRV-Cross/spirv_cross.cpp
-    ${CMAKE_SOURCE_DIR}/third_party/SPIRV-Cross/spirv_cfg.cpp
-    ${CMAKE_SOURCE_DIR}/third_party/SPIRV-Cross/spirv_cpp.cpp
-    ${CMAKE_SOURCE_DIR}/third_party/SPIRV-Cross/spirv_glsl.cpp
-    )
-add_library(spirv_cross SHARED ${SPIRV_CROSS_SOURCE})
+# [spirv-cross]
+# NOTE(LTE): Must enable SHARED build spirv-cross otherwise -fPIC error happens.
+# TODO(LTE): Support static build of spirv-cross
+set(SPIRV_CROSS_SHARED ON CACHE INTERNAL "" FORCE)
+set(SPIRV_CROSS_CLI OFF CACHE INTERNAL "" FORCE)
+set(SPIRV_CROSS_ENABLE_TESTS OFF CACHE INTERNAL "" FORCE)
+set(SPIRV_CROSS_ENABLE_HLSL OFF CACHE INTERNAL "" FORCE)
+set(SPIRV_CROSS_ENABLE_HLSL OFF CACHE INTERNAL "" FORCE)
+set(SPIRV_CROSS_ENABLE_MSL OFF CACHE INTERNAL "" FORCE)
+set(SPIRV_CROSS_ENABLE_CPP ON CACHE INTERNAL "" FORCE)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/third_party/SPIRV-Cross)
+#set (SPIRV_CROSS_SOURCE
+#    ${CMAKE_SOURCE_DIR}/third_party/SPIRV-Cross/spirv_cross.cpp
+#    ${CMAKE_SOURCE_DIR}/third_party/SPIRV-Cross/spirv_cfg.cpp
+#    ${CMAKE_SOURCE_DIR}/third_party/SPIRV-Cross/spirv_cpp.cpp
+#    ${CMAKE_SOURCE_DIR}/third_party/SPIRV-Cross/spirv_glsl.cpp
+#    )
+list(APPEND SOFTCOMPUTE_EXT_LIBS spirv-cross-glsl spirv-cross-cpp spirv-cross-util spirv-cross-core spirv-cross-c-shared)
 
 
 # [Executable]
@@ -216,9 +228,7 @@ add_executable ( softcompute
 
 target_link_libraries( softcompute PRIVATE
     softcompute_core
-    spirv_cross
-    glslang
-    SPIRV
+    #glslang
     ${SOFTCOMPUTE_EXT_LIBS}
     ${CMAKE_THREAD_LIBS_INIT}
     ${CMAKE_DL_LIBS}
