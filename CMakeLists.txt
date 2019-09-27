@@ -13,55 +13,60 @@ find_package(Sanitizers) # Address sanitizer.
 
 if (WITH_JIT)
 
-  # Enable PIC 
+  # Enable PIC
   set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-  #find_package(LibClang REQUIRED)
-  find_package(LLVM REQUIRED CONFIG NO_CMAKE_BUILDS_PATH)
+  # Search ClangConfig.cmake from LIBCLANG_DIR environment variable.
+  find_package(Clang REQUIRED PATHS $ENV{LIBCLANG_DIR})
+  set(CLANG_LIBS libclang clangCodeGen)
+  include_directories(${CLANG_INCLUDE_DIRS})
 
-  #
-  # libclang settings. based on CMakeLists.txt from Oclgrind.
-  #
-  set (CLANG_ROOT " " CACHE PATH "Root of Clang installation")
-  if (NOT ${CLANG_ROOT} STREQUAL " ")
-    include_directories("${CLANG_ROOT}/include")
-    link_directories("${CLANG_ROOT}/lib")
-    set(CMAKE_REQUIRED_INCLUDES
-        "${CMAKE_REQUIRED_INCLUDES};${CLANG_ROOT}/include")
-  endif()
+  #find_package(LLVM REQUIRED PATHS $ENV{LLVM_DIR} CONFIG NO_CMAKE_BUILDS_PATH)
 
-  # Check for Clang headers
-  unset(CLANG_HEADER CACHE)
-  find_path(CLANG_HEADER "clang/CodeGen/CodeGenAction.h"
-            PATHS "${CLANG_ROOT}/include" "${LLVM_INCLUDE_DIRS}"
-            NO_DEFAULT_PATH)
-  find_path(CLANG_HEADER "clang/CodeGen/CodeGenAction.h")
-  if ("${CLANG_HEADER}" STREQUAL "CLANG_HEADER-NOTFOUND")
-    message(FATAL_ERROR "Clang headers not found (set CLANG_ROOT)")
-  endif()
-  
-  # Check for Clang libraries
-  unset(CLANG_LIB CACHE)
-  find_library(CLANG_LIB "clangFrontend"
-               PATHS "${CLANG_ROOT}/lib" "${LLVM_LIBRARY_DIRS}"
-               NO_DEFAULT_PATH)
-  find_library(CLANG_LIB "clangFrontend")
-  if ("${CLANG_LIB}" STREQUAL "CLANG_LIB-NOTFOUND")
-    message(FATAL_ERROR "Clang libraries not found (set CLANG_ROOT)")
-  endif()
+  ##
+  ## libclang settings. based on CMakeLists.txt from Oclgrind.
+  ##
+  #set (CLANG_ROOT " " CACHE PATH "Root of Clang installation")
+  #if (NOT ${CLANG_ROOT} STREQUAL " ")
+  #  include_directories("${CLANG_ROOT}/include")
+  #  link_directories("${CLANG_ROOT}/lib")
+  #  set(CMAKE_REQUIRED_INCLUDES
+  #      "${CMAKE_REQUIRED_INCLUDES};${CLANG_ROOT}/include")
+  #endif()
+
+  ## Check for Clang headers
+  #unset(CLANG_HEADER CACHE)
+  #find_path(CLANG_HEADER "clang/CodeGen/CodeGenAction.h"
+  #          PATHS "${CLANG_ROOT}/include" "${LLVM_INCLUDE_DIRS}"
+  #          NO_DEFAULT_PATH)
+  #find_path(CLANG_HEADER "clang/CodeGen/CodeGenAction.h")
+  #if ("${CLANG_HEADER}" STREQUAL "CLANG_HEADER-NOTFOUND")
+  #  message(FATAL_ERROR "Clang headers not found (set CLANG_ROOT)")
+  #endif()
+
+  ## Check for Clang libraries
+  #unset(CLANG_LIB CACHE)
+  #find_library(CLANG_LIB "clangFrontend"
+  #             PATHS "${CLANG_ROOT}/lib" "${LLVM_LIBRARY_DIRS}"
+  #             NO_DEFAULT_PATH)
+  #find_library(CLANG_LIB "clangFrontend")
+  #if ("${CLANG_LIB}" STREQUAL "CLANG_LIB-NOTFOUND")
+  #  message(FATAL_ERROR "Clang libraries not found (set CLANG_ROOT)")
+  #endif()
 
 
-  set(CLANG_LIBS clangFrontend clangSerialization clangDriver clangCodeGen
-                 clangParse clangSema clangAnalysis clangEdit clangAST clangLex clangBasic)
+  #set(CLANG_LIBS clangFrontend clangSerialization clangDriver clangCodeGen
+  #               clangParse clangSema clangAnalysis clangEdit clangAST clangLex clangBasic)
 
-  add_definitions(${LLVM_DEFINITIONS})
-  include_directories(${LLVM_INCLUDE_DIRS})
-  link_directories(${LLVM_LIBRARY_DIRS})
+  #add_definitions(${LLVM_DEFINITIONS})
+  #include_directories(${LLVM_INCLUDE_DIRS})
+  #link_directories(${LLVM_LIBRARY_DIRS})
 
   # list up LLVM libraries for linking.
-  llvm_map_components_to_libnames(LLVM_LIBS
-    bitreader bitwriter core coverage instrumentation ipo irreader
-    mcjit coroutines native lto mcparser objcarcopts option target support)
+  llvm_map_components_to_libnames(LLVM_LIBS all)
+  #llvm_map_components_to_libnames(LLVM_LIBS
+  #  bitreader bitwriter core coverage instrumentation ipo irreader
+  #  mcjit coroutines native lto mcparser objcarcopts option target support)
 
   #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${LLVM_COMPILE_FLAGS}")
 
@@ -73,8 +78,8 @@ if (WITH_JIT)
   endif()
 
   # Use libc++
-  set(CMAKE_EXE_LINKER_FLAG "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++ -lc++ -lc++abi")
-  add_definitions("-nostdinc++")
+  #set(CMAKE_EXE_LINKER_FLAG "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++ -lc++ -lc++abi")
+  #add_definitions("-nostdinc++")
 
   message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
   message(STATUS "Using LLVMConfig.cmake in : ${LLVM_DIR}")
@@ -84,12 +89,14 @@ if (WITH_JIT)
   message(STATUS "CLANG_LIBS                : ${CLANG_LIBS}")
   message(STATUS "LLVM_LIB                  : ${LLVM_LIBS}")
 
-  #include_directories(${LLVM_INCLUDE_DIRS})
-  include_directories(${LIBCLANG_INCLUDE_DIRS})
-  include_directories(${LIBCXX_INCLUDE_DIR})
+  include_directories(${LLVM_INCLUDE_DIRS})
+  #include_directories(${LIBCLANG_INCLUDE_DIRS})
+  #include_directories(${LIBCXX_INCLUDE_DIR})
 
   # libc++
-  set(SOFTCOMPUTE_JIT_LIBS ${CLANG_LIBS} ${LLVM_LIBS} c++ c++abi)
+  #set(SOFTCOMPUTE_JIT_LIBS ${CLANG_LIBS} ${LLVM_LIBS} c++ c++abi)
+
+  set(SOFTCOMPUTE_JIT_LIBS ${CLANG_LIBS} ${LLVM_LIBS})
 
   add_definitions("-DSOFTCOMPUTE_ENABLE_JIT")
 endif (WITH_JIT)
@@ -229,7 +236,7 @@ if (WIN32)
   if (CMAKE_VERSION VERSION_GREATER 3.6.0)
     set_property(DIRECTORY PROPERTY VS_STARTUP_PROJECT softcompute)
   endif ()
-  
+
   # For easier debugging in VS IDE(cmake 3.8.0 or later required)
   if (CMAKE_VERSION VERSION_GREATER 3.8.0)
     # Set working directory to $lucia git repo root.

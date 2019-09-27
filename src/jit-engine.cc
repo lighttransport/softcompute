@@ -148,13 +148,13 @@ ShaderInstance::Impl::~Impl() {
 }
 
 static std::vector<std::string> split(std::string strToSplit, char delimeter)
-{   
+{
     std::stringstream ss;
     ss << strToSplit;
     std::string item;
     std::vector<std::string> splittedStrings;
     while (std::getline(ss, item, delimeter))
-    {  
+    {
        splittedStrings.push_back(item);
     }
     return splittedStrings;
@@ -337,7 +337,11 @@ bool ShaderInstance::Impl::Compile(const std::string &type,
   CompilerInstance *Clang = new CompilerInstance();
 
   // Initialize a compiler invocation object from the clang (-cc1) arguments.
+#if (LLVM_VERSION_MAJOR >= 8)
+  const opt::ArgStringList &CCArgInputs = Cmd.getArguments();
+#else
   const driver::ArgStringList &CCArgInputs = Cmd.getArguments();
+#endif
   // llvm::OwningPtr<CompilerInvocation> CI(new CompilerInvocation);
   // CompilerInvocation::CreateFromArgs(*CI,
   //                                   const_cast<const char **>(CCArgs.data()),
@@ -348,7 +352,11 @@ bool ShaderInstance::Impl::Compile(const std::string &type,
 
   // Workaround for LLVM 3.3(bug?)
   // filter out '-backend-option -vectorize-loops'
+#if (LLVM_VERSION_MAJOR >= 8)
+  opt::ArgStringList CCArgs;
+#else
   driver::ArgStringList CCArgs;
+#endif
   for (size_t i = 0; i < CCArgInputs.size(); i++) {
     std::cout << "args " << CCArgInputs[i] << std::endl;
     if ((strcmp(CCArgInputs[i], "-backend-option") == 0) ||
@@ -458,7 +466,7 @@ ShaderInstance::ShaderInstance() : impl(new Impl()) {}
 ShaderInstance::ShaderInstance(const ShaderInstance &rhs) :
   ShaderInstance() {
   (void)rhs;
-  
+
 }
 
 
