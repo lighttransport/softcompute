@@ -350,21 +350,10 @@ bool ShaderInstance::Impl::Compile(const std::string &type,
   //                                     CCArgs.size(),
   //                                   Diags);
 
-  // Workaround for LLVM 3.3(bug?)
-  // filter out '-backend-option -vectorize-loops'
-#if (LLVM_VERSION_MAJOR >= 8)
   opt::ArgStringList CCArgs;
-#else
-  driver::ArgStringList CCArgs;
-#endif
   for (size_t i = 0; i < CCArgInputs.size(); i++) {
     std::cout << "args " << CCArgInputs[i] << std::endl;
-    if ((strcmp(CCArgInputs[i], "-backend-option") == 0) ||
-        (strcmp(CCArgInputs[i], "-vectorize-loops") == 0)) {
-      // skip;
-    } else {
-      CCArgs.push_back(CCArgInputs[i]);
-    }
+    CCArgs.push_back(CCArgInputs[i]);
   }
 
   // for (int i = 0; i < CCArgs.size(); i++) {
@@ -372,8 +361,7 @@ bool ShaderInstance::Impl::Compile(const std::string &type,
   //}
   bool Success;
   Success = CompilerInvocation::CreateFromArgs(
-      Clang->getInvocation(), const_cast<const char **>(CCArgs.data()),
-      const_cast<const char **>(CCArgs.data()) + CCArgs.size(), Diags);
+      Clang->getInvocation(), CCArgs, Diags);
 
   //// Show the invocation, with -v.
   // if (CI->getHeaderSearchOpts().Verbose) {
@@ -428,7 +416,7 @@ bool ShaderInstance::Impl::Compile(const std::string &type,
 
   std::string Error;
   EE = llvm::EngineBuilder(std::move(Module))
-           .setMCJITMemoryManager(llvm::make_unique<ShaderJITMemoryManager>())
+           .setMCJITMemoryManager(std::make_unique<ShaderJITMemoryManager>())
            .create();
   if (!EE) {
     llvm::errs() << "unable to make execution engine: " << Error << "\n";
