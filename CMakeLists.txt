@@ -10,6 +10,7 @@ option(LIBCXX_INCLUDE_DIR "Path to libcxx headers)" "/usr/include/c++/v1")
 
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 find_package(Sanitizers) # Address sanitizer.
+find_package(Threads)
 
 if (WITH_JIT)
 
@@ -109,8 +110,14 @@ set(ENABLE_GLSLANG_BINARIES OFF CACHE INTERNAL "Builds glslangValidator and spir
 set(ENABLE_HLSL OFF CACHE INTERNAL "" FORCE)
 add_subdirectory(${CMAKE_SOURCE_DIR}/third_party/glslang)
 
-# threads
-find_package(Threads)
+# [glslang StandAlone]
+include_directories(${CMAKE_SOURCE_DIR}/third_party/glslang)
+list(APPEND SOFTCOMPUTE_CORE_SOURCE ${CMAKE_SOURCE_DIR}/third_party/glslang/StandAlone/ResourceLimits.cpp)
+
+
+# [lfwatch]
+add_subdirectory(${CMAKE_SOURCE_DIR}/third_party/lfwatch)
+list(APPEND SOFTCOMPUTE_EXT_LIBS lfwatch)
 
 if (WITH_OPENMP)
   find_package(OpenMP)
@@ -179,6 +186,7 @@ include_directories(
     ${CMAKE_SOURCE_DIR}/third_party/spdlog/include
     ${CMAKE_SOURCE_DIR}/third_party/glslang
     ${CMAKE_SOURCE_DIR}/third_party/json/include
+    ${CMAKE_SOURCE_DIR}/third_party/filesystem/include
     ${CMAKE_SOURCE_DIR}/src
 )
 
@@ -192,7 +200,7 @@ else (WITH_JIT)
       )
 endif(WITH_JIT)
 
-set (SOFTCOMPUTE_CORE_SOURCE
+list(APPEND SOFTCOMPUTE_CORE_SOURCE
     ${SOFTCOMPUTE_ENGINE_SOURCE}
     ${CMAKE_SOURCE_DIR}/src/softgl.cc
     )

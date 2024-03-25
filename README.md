@@ -121,6 +121,8 @@ You may need manually edit C/C++ header path in `src/jit-engine.cc`
 * spirv_cross header files are licensed under Apache 2.0 License.
 * src/OptionParser is licensed under MIT License.
 * src/stb_image_write.h is public domain license.
+* lfwatch(file watcher library): MIT license.
+* ghc filesystem(C++17 compatible filesystem in C++11): 3-clause BSD license
 
 ## Limitation
 
@@ -141,4 +143,4 @@ Only support simple compute shader at this time.
 * [ ] Interactive edit & run.
   * [ ] Watch file changes.
 * [ ] gitsubmodule `glm`
-
+* [ ] Switch to use meson build system.

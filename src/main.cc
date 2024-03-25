@@ -44,6 +44,11 @@
 
 #include "nlohmann/json.hpp"
 
+// ghc filesystem
+#include "ghc/filesystem.hpp"
+
+namespace fs = ghc::filesystem;
+
 #ifdef __clang__
 #pragma clang diagnostic pop
 #endif
@@ -221,7 +226,7 @@ static bool parse_ssbo(int *id, int *set_no, int *binding_no, std::string* name,
   if (n == 4) {
     (*name) = std::string(buf);
     return true;
-  } 
+  }
 
   return false;
 }
@@ -251,7 +256,7 @@ static bool compile_spirv(const std::string &output_filename, bool verbose, cons
     ss << " --cpp";
     ss << " " << spirv_filename;
     ss << " --dump-resources";
-    ss << " 2>&1"; // spirv-cross dumps info to stderr. redirect stderr to stdout to catch dump info. 
+    ss << " 2>&1"; // spirv-cross dumps info to stderr. redirect stderr to stdout to catch dump info.
 
     std::string cmd;
     cmd = ss.str();
@@ -398,7 +403,8 @@ int main(int argc, char **argv)
     else if (strcmp(ext, ".spv") == 0)
     {
         // Assume SPIR-V binary
-        std::string tmp_cc_filename = "tmp.cc";
+        fs::path tmp_filepath = fs::temp_directory_path();
+        std::string tmp_cc_filename = fs::"tmp.cc";
         bool ret = compile_spirv(tmp_cc_filename, verbose, filename);
         if (!ret)
         {
@@ -555,7 +561,7 @@ LinkShader(
   GLuint& compShader)
 {
   GLint val = 0;
-  
+
   if (prog != 0) {
     glDeleteProgram(prog);
   }
@@ -615,7 +621,7 @@ int main(int argc, char **argv)
       }
 
       std::cout << "shader_id = " << shader_id << std::endl;
-        
+
       GLuint prog = 0;
       ret = LinkShader(prog, shader_id);
       if (!ret) {
