@@ -43,7 +43,7 @@ Note that Compilation using Visual Sutdio(MSC) is not fully supported yet.
 `glm` and `SPIRV-Cross` will be added as a submodule.
 
     $ cd third_party/glslang
-    $ python update_glslang_sources.p
+    $ python update_glslang_sources.py
 
 ## Build on Linux or MacOSX
 
