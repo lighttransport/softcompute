@@ -110,9 +110,9 @@ set(ENABLE_GLSLANG_BINARIES OFF CACHE INTERNAL "Builds glslangValidator and spir
 set(ENABLE_HLSL OFF CACHE INTERNAL "" FORCE)
 add_subdirectory(${CMAKE_SOURCE_DIR}/third_party/glslang)
 
-# [glslang StandAlone]
-include_directories(${CMAKE_SOURCE_DIR}/third_party/glslang)
-list(APPEND SOFTCOMPUTE_CORE_SOURCE ${CMAKE_SOURCE_DIR}/third_party/glslang/StandAlone/ResourceLimits.cpp)
+# [glslang ResourceLimits]
+include_directories(${CMAKE_SOURCE_DIR}/third_party/glslang/glslang)
+list(APPEND SOFTCOMPUTE_CORE_SOURCE ${CMAKE_SOURCE_DIR}/third_party/glslang/glslang/ResourceLimits/ResourceLimits.cpp)
 
 
 # [lfwatch]

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-LLVM_CLANG_DIST=$HOME/local/clang+llvm-8.0.0-x86_64-linux-gnu-ubuntu-16.04/
+LLVM_CLANG_DIST=/mnt/data/local/clang+llvm-16.0.0-x86_64-linux-gnu-ubuntu-18.04/
 
 rm -rf build
 mkdir build

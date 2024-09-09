@@ -17,6 +17,7 @@
 
 * cmake
 * Recent C++11 compiler(e.g. clang or gcc)
+* python
 
 ### Optional
 
@@ -40,6 +41,9 @@ Note that Compilation using Visual Sutdio(MSC) is not fully supported yet.
     $ git submodule update --init
 
 `glm` and `SPIRV-Cross` will be added as a submodule.
+
+    $ cd third_party/glslang
+    $ python update_glslang_sources.p
 
 ## Build on Linux or MacOSX
 

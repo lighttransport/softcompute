@@ -32,10 +32,9 @@
 
 // glslang
 #include "glslang/Public/ShaderLang.h"
+#include "glslang/Public/ResourceLimits.h"
 #include "SPIRV/GlslangToSpv.h"
 
-// glslang StandAlone
-#include "StandAlone/ResourceLimits.h"
 
 #ifdef __clang__
 #pragma clang diagnostic pop
@@ -309,7 +308,7 @@ static void PutsIfNonEmpty(const char *str)
 // glsl string -> spirv
 static bool compile_glsl_string(const std::string &glsl_input, const std::string &filename, std::vector<uint32_t> *out_spirv) {
 
-  TBuiltInResource resources = glslang::DefaultTBuiltInResource;
+  const TBuiltInResource *resources = GetDefaultResources();
 
 
   glslang::TProgram &program = *new glslang::TProgram;
@@ -333,7 +332,7 @@ static bool compile_glsl_string(const std::string &glsl_input, const std::string
   EShMessages messages = EShMsgDefault;
 
   // TODO(LTE): Includer, preprocess.
-  bool compile_ok = shader->parse(&resources, /* version */110, false, messages);
+  bool compile_ok = shader->parse(resources, /* version */110, false, messages);
 
   PutsIfNonEmpty(shader->getInfoLog());
   PutsIfNonEmpty(shader->getInfoDebugLog());
